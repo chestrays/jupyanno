@@ -19,10 +19,11 @@ dependencies:
   - h5py
   - scikit-image<=0.20
   - scikit-learn<=0.20
-  - pytorch<=0.3.0
+  - pytorch<0.5.0
   - torchvision
   - opencv3>=3.0
   - tensorflow
+  - nbserverproxy
   - pip:
     - keras<=3.0
     - plotly
