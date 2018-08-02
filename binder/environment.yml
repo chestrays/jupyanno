@@ -24,6 +24,7 @@ dependencies:
   - opencv3>=3.0
   - tensorflow
   - nbserverproxy
+  - pymongo
   - pip:
     - keras<=3.0
     - plotly
