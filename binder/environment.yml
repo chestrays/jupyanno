@@ -28,6 +28,7 @@ dependencies:
   - pip:
     - keras<=3.0
     - plotly
+    - bs4
     - seaborn==0.7.1
     - git+https://github.com/chestrays/multiappmode
     - cloudpickle
