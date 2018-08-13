@@ -32,3 +32,5 @@ source activate testenv
 if [[ "$COVERAGE" == "true" ]]; then
     pip install pytest-cov coverage coveralls
 fi
+chmod a+x binder/postBuild
+sh binder/postBuild
