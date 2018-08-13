@@ -8,7 +8,7 @@ A simple jupyter notebook for annotating images
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/chestrays/jupyanno/master?urlpath=%2Fmuapps%2Frandom_githubber%2Fanno_app.ipynb)
 
 ## Dashboard
-https://mybinder.org/v2/gh/chestrays/jupyanno/data-branch?urlpath=%2Fmuapps%2Fadmin%2Fdashboard.ipynb
+https://mybinder.org/v2/gh/chestrays/jupyanno/master?urlpath=%2Fmuapps%2Fadmin%2Fdashboard.ipynb
 
 
 ## Results
