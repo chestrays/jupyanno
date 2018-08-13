@@ -21,4 +21,3 @@ script:
         exit 1;
     fi;
     done
-done
