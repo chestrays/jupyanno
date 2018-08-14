@@ -3,7 +3,7 @@
 jupyter nbextension     enable --py --sys-prefix appmode
 jupyter serverextension enable --py --sys-prefix appmode
 jupyter serverextension enable --py nbserverproxy
-jupyter nbextension install --py fileupload
-jupyter nbextension enable --py fileupload
+jupyter nbextension install --py --user fileupload
+jupyter nbextension enable --py --user fileupload
 
 cd sample_data; unzip -q low_res.zip; cd ..
