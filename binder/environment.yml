@@ -2,10 +2,8 @@ name: jupyanno
 channels:
   - damianavila82
   - satra
-  - menpo
   - pluraldatum
   - glemaitre
-  - soumith
   - conda-forge
   - defaults
   - simpleitk
@@ -15,19 +13,14 @@ dependencies:
   - matplotlib
   - pandas
   - bokeh
+  - ipympl
   - SimpleITK
-  - h5py
   - scikit-image<=0.20
   - scikit-learn<=0.20
-  - pytorch<0.5.0
-  - torchvision
-  - opencv3>=3.0
-  - tensorflow
   - nbserverproxy
-  - pymongo
   - pip:
-    - keras<=3.0
     - plotly
+    - pydicom
     - bs4
     - seaborn==0.7.1
     - git+https://github.com/chestrays/multiappmode
