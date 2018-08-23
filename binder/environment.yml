@@ -18,11 +18,11 @@ dependencies:
   - scikit-image<=0.20
   - scikit-learn<=0.20
   - nbserverproxy
+  - appmode
   - pip:
     - plotly
     - pydicom
     - bs4
     - seaborn==0.7.1
-    - git+https://github.com/chestrays/multiappmode
     - cloudpickle
     - fileupload
