@@ -51,20 +51,23 @@ def get_sheet_as_df(base_url, kk, columns="A:AG"):
     :return:
     """
     try:
+        # TODO: we should probably get the whole sheet
         all_vals = "{base_url}/{cols}?key={kk}".format(base_url=base_url,
                                                        cols=columns,
-                                                       # TODO: we should probably get the whole sheet
+
                                                        kk=kk)
         t_data = json.loads(urlopen(all_vals).read().decode('latin1'))[
             'values']
         frow = t_data.pop(0)
 
-        return pd.DataFrame([dict([(key, '' if idx >= len(irow) else irow[idx])
-                                   for idx, key in enumerate(frow)]) for irow in
-                             t_data])
+        return pd.DataFrame([
+            dict([(key, '' if idx >= len(irow) else irow[idx])
+                  for idx, key in enumerate(frow)]) for irow in
+            t_data])
     except IOError as e:
         warnings.warn(
-            'Sheet could not be accessed, check internet connectivity, proxies and permissions: {}'.format(
+            'Sheet could not be accessed, check internet connectivity, \
+            proxies and permissions: {}'.format(
                 e))
         return pd.DataFrame([{}])
 
@@ -157,7 +160,8 @@ def _wrap_uri(data_uri): return "data:image/png;base64,{0}".format(data_uri)
 
 def raw_html_render(temp_df):
     """
-    For rendering html tables which contain HTML information and shouldn't be escaped or cropped
+    For rendering html tables which contain HTML information and
+    shouldn't be escaped or cropped
     :param temp_df:
     :return:
     """
