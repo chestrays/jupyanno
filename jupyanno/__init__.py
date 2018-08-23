@@ -1,29 +1,27 @@
+import base64
+import json
+import os
+import warnings
+from collections import namedtuple
+from glob import glob
+from io import BytesIO, BytesIO
+from itertools import cycle
+from time import time
+
+import ipywidgets as ipw
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from IPython.display import display, Javascript, HTML
+from PIL import Image
+from scipy.stats import binom
 from six.moves.urllib.parse import urlparse, parse_qs
 from six.moves.urllib.request import urlopen
-import os
-import ipywidgets as ipw
-from glob import glob
-import json
-import pandas as pd
-import numpy as np
-from PIL import Image
-from itertools import cycle
-from collections import namedtuple
-from io import BytesIO
-from time import time
-import warnings
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.stats import binom
-from itertools import cycle
-from IPython.display import display, Javascript
-from PIL import Image
-import base64
-from io import BytesIO
-from IPython.display import HTML
 
 TaskData = namedtuple('TaskData',
-                      ['task', 'data_df', 'label_col', 'image_key_col', 'base_img_dir', 'base_sheet_url', 'sheet_id'])
+                      ['task', 'data_df', 'label_col', 'image_key_col',
+                       'base_img_dir', 'base_sheet_url', 'sheet_id'])
 
 _CELLSET_ID = "AIzaSyC8Zo-9EbXgHfqNzDxVb_YS_IIZBWtvoJ4"
 
@@ -54,22 +52,26 @@ def get_sheet_as_df(base_url, kk, columns="A:AG"):
     """
     try:
         all_vals = "{base_url}/{cols}?key={kk}".format(base_url=base_url,
-                                                       cols=columns,  # TODO: we should probably get the whole sheet
+                                                       cols=columns,
+                                                       # TODO: we should probably get the whole sheet
                                                        kk=kk)
         t_data = json.loads(urlopen(all_vals).read().decode('latin1'))[
             'values']
         frow = t_data.pop(0)
 
         return pd.DataFrame([dict([(key, '' if idx >= len(irow) else irow[idx])
-                                   for idx, key in enumerate(frow)]) for irow in t_data])
+                                   for idx, key in enumerate(frow)]) for irow in
+                             t_data])
     except IOError as e:
         warnings.warn(
-            'Sheet could not be accessed, check internet connectivity, proxies and permissions: {}'.format(e))
+            'Sheet could not be accessed, check internet connectivity, proxies and permissions: {}'.format(
+                e))
         return pd.DataFrame([{}])
 
 
 def sheet_api_url(sheet_id):
-    return "https://sheets.googleapis.com/v4/spreadsheets/{id}/values".format(id=sheet_id)
+    return "https://sheets.googleapis.com/v4/spreadsheets/{id}/values".format(
+        id=sheet_id)
 
 
 def safe_json_load(in_str):
@@ -101,7 +103,7 @@ def read_annotation(in_task):
 def binary_correct(c_row, label_col):
     if c_row['label'] == c_row[label_col]:
         return True
-    elif c_row['label'] == None:
+    elif c_row['label'] is None:
         if c_row[label_col] == c_row['task']:
             # definitely wrong
             return False
@@ -123,8 +125,10 @@ def read_task_file(in_path):
         image_key_col = annotation_task['dataset']['image_path']
         base_img_dir = annotation_task['dataset']['base_image_directory']
         base_sheet_url = annotation_task['google_forms']['sheet_url']
-        sheet_id = base_sheet_url.strip('?usp=sharing').strip('/edit').split('/')[-1]
-        return TaskData(annotation_task, data_df, label_col, image_key_col, base_img_dir, base_sheet_url, sheet_id)
+        sheet_id = \
+            base_sheet_url.strip('?usp=sharing').strip('/edit').split('/')[-1]
+        return TaskData(annotation_task, data_df, label_col, image_key_col,
+                        base_img_dir, base_sheet_url, sheet_id)
 
 
 def show_my_result(name_list, correct_list, num_questions=30, ax1=None):
@@ -139,7 +143,8 @@ def show_my_result(name_list, correct_list, num_questions=30, ax1=None):
     prop_cycle = plt.rcParams['axes.prop_cycle']
     color_cycle = cycle(prop_cycle.by_key()['color'])
     y_pos_list = np.linspace(0.2, 0.8, len(name_list))
-    for y_pos, name, correct, color in zip(y_pos_list, name_list, correct_list, color_cycle):
+    for y_pos, name, correct, color in zip(y_pos_list, name_list, correct_list,
+                                           color_cycle):
         ax1.axvline(correct, label='{}\nTop {:2.1f}%'.format(
             name, 100 * binom_cdf[correct]), color=color)
         ax1.text(correct, y_pos, name)
