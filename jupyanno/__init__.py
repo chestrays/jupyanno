@@ -17,8 +17,16 @@ import seaborn as sns
 from scipy.stats import binom
 from itertools import cycle
 from IPython.display import display, Javascript
-sns.set_style("whitegrid", {'axes.grid': False})
+from PIL import Image
+import base64
+from io import BytesIO
+from IPython.display import HTML
+
+TaskData = namedtuple('TaskData',
+                      ['task', 'data_df', 'label_col', 'image_key_col', 'base_img_dir', 'base_sheet_url', 'sheet_id'])
+
 _CELLSET_ID = "AIzaSyC8Zo-9EbXgHfqNzDxVb_YS_IIZBWtvoJ4"
+
 
 def setup_appmode():
     js_str = """$('#appmode-leave').hide()
@@ -29,13 +37,15 @@ def setup_appmode():
             return false
             // disable scrolling
         }"""
+    sns.set_style("whitegrid", {'axes.grid': False})
     display(Javascript(js_str))
-    
+
 
 def _get_user_id():
     cur_url = globals().get('jupyter_notebook_url', 'nobody')
     qs_info = parse_qs(urlparse(cur_url).query)
     return qs_info.get('user', ['nobody'])[0]
+
 
 def get_sheet_as_df(base_url, kk, columns="A:AG"):
     """
@@ -56,10 +66,11 @@ def get_sheet_as_df(base_url, kk, columns="A:AG"):
         warnings.warn(
             'Sheet could not be accessed, check internet connectivity, proxies and permissions: {}'.format(e))
         return pd.DataFrame([{}])
-def sheet_api_url(
-    sheet_id): return "https://sheets.googleapis.com/v4/spreadsheets/{id}/values".format(id=sheet_id)
 
-TaskData = namedtuple('TaskData', ['task', 'data_df', 'label_col', 'image_key_col', 'base_img_dir', 'base_sheet_url', 'sheet_id'])
+
+def sheet_api_url(sheet_id):
+    return "https://sheets.googleapis.com/v4/spreadsheets/{id}/values".format(id=sheet_id)
+
 
 def safe_json_load(in_str):
     try:
@@ -67,6 +78,7 @@ def safe_json_load(in_str):
     except Exception as e:
         print('Invalid json row {}'.format(e))
         return dict()
+
 
 def read_annotation(in_task):
     annot_df = get_sheet_as_df(sheet_api_url(in_task.sheet_id), _CELLSET_ID)
@@ -85,6 +97,7 @@ def read_annotation(in_task):
     print('Found', annot_df.shape[0], 'completed annotations')
     return annot_df
 
+
 def binary_correct(c_row, label_col):
     if c_row['label'] == c_row[label_col]:
         return True
@@ -101,6 +114,7 @@ def binary_correct(c_row, label_col):
 
     return None  # we arent sure if it is right or not
 
+
 def read_task_file(in_path):
     with open(in_path, 'r') as f:
         annotation_task = json.load(f)
@@ -112,13 +126,14 @@ def read_task_file(in_path):
         sheet_id = base_sheet_url.strip('?usp=sharing').strip('/edit').split('/')[-1]
         return TaskData(annotation_task, data_df, label_col, image_key_col, base_img_dir, base_sheet_url, sheet_id)
 
+
 def show_my_result(name_list, correct_list, num_questions=30, ax1=None):
-    n_correct = np.arange(num_questions+1)
+    n_correct = np.arange(num_questions + 1)
     if ax1 is None:
         fig, ax1 = plt.subplots(1, 1, figsize=(10, 5), dpi=250)
     binom_pmf = binom.pmf(n_correct, num_questions, 0.5)
     binom_cdf = np.cumsum(binom_pmf)
-    ax1.bar(n_correct, binom_pmf/np.max(binom_pmf), color='k', alpha=0.5)
+    ax1.bar(n_correct, binom_pmf / np.max(binom_pmf), color='k', alpha=0.5)
 
     ax1.plot(n_correct, binom_cdf, 'k-', label='Cumulative')
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -126,15 +141,10 @@ def show_my_result(name_list, correct_list, num_questions=30, ax1=None):
     y_pos_list = np.linspace(0.2, 0.8, len(name_list))
     for y_pos, name, correct, color in zip(y_pos_list, name_list, correct_list, color_cycle):
         ax1.axvline(correct, label='{}\nTop {:2.1f}%'.format(
-            name, 100*binom_cdf[correct]), color=color)
+            name, 100 * binom_cdf[correct]), color=color)
         ax1.text(correct, y_pos, name)
     ax1.legend()
     return ax1
-
-from PIL import Image
-import base64
-from io import BytesIO
-from IPython.display import HTML
 
 
 def _wrap_uri(data_uri): return "data:image/png;base64,{0}".format(data_uri)
