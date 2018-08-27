@@ -15,7 +15,7 @@ install: source build_tools/travis_install.sh
 
 script:
   - shopt -s globstar
-  - for nb in *ipynb; do
+  - for nb in **/*ipynb; do
     jupyter nbconvert --ExecutePreprocessor.timeout=3600 --execute "$nb" --to markdown |& tee nb_to_md.txt;
     traceback=$(grep "Traceback (most recent call last):" nb_to_md.txt);
     if [[ $traceback ]]; then
