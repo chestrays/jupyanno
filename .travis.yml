@@ -24,7 +24,6 @@ script:
         exit 1;
     fi;
     done
-  - python -c 'import matplotlib;f=open(matplotlib.matplotlib_fname(), "w");f.write("backend: Agg");f.close()'
   - mypy -m jupyanno --ignore-missing-imports
   - pytest --cov=jupyanno
   - codecov
