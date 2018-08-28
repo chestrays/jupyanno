@@ -4,10 +4,9 @@ import os
 import warnings
 from collections import namedtuple
 from glob import glob
-from io import BytesIO, BytesIO
+from io import BytesIO
 from itertools import cycle
 from time import time
-
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import numpy as np
@@ -104,6 +103,21 @@ def read_annotation(in_task):
 
 
 def binary_correct(c_row, label_col):
+    """
+    determine if the row is correct or not
+    :param c_row: row from a dataframe (dict-like)
+    :param label_col: the colum where the label information resides
+    :return: boolean if the value is correct or not
+    >>> test_row = {'task': 'Pneumonia', 'value': 'Pneumonia', 'label': 'Pneumonia'}
+    >>> binary_correct(test_row, 'value')
+    True
+    >>> test_row['value'] = 'Influenza'
+    >>> binary_correct(test_row, 'value')
+    False
+    >>> test_row = {'task': 'Influenza', 'value': 'Pneumonia', 'label': None}
+    >>> binary_correct(test_row, 'value')
+    True
+    """
     if c_row['label'] == c_row[label_col]:
         return True
     elif c_row['label'] is None:
