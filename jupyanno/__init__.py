@@ -33,16 +33,16 @@ def setup_appmode():
     display(Javascript(js_str))
 
 
-def _get_user_id():
+def get_app_user_id():
     """
     Get the userid from the `jupyter_notebook_url`
     injected by the appmode extension (if in use)
     otherwise return a 'nobody'
     :return: appmode username of current user
-    >>> _get_user_id()
+    >>> get_app_user_id()
     'nobody'
     >>> jupyter_notebook_url = 'https://a.b.c?user=dan#hello'
-    >>> _get_user_id()
+    >>> get_app_user_id()
     'dan'
     """
     cur_url = globals().get('jupyter_notebook_url', None)

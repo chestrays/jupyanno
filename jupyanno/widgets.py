@@ -11,6 +11,7 @@ from time import time
 import ipywidgets as ipw
 import numpy as np
 import plotly.graph_objs as go
+from IPython.display import display
 from PIL import Image, ImageEnhance as ie
 
 MultipleChoiceAnswer = namedtuple(
@@ -95,6 +96,34 @@ def image_dict(c_img):
 
 
 class PlotlyImageViewer(WidgetObject):
+    """
+    A plotly-based image viewer allowing zoom, pan and overlays
+    >>> h = PlotlyImageViewer(with_bc=True).get_widget()
+    >>> h.children[-1].data[0]['uid']=0
+    >>> print(h)
+    VBox(children=(HBox(children=(FloatSlider(value=1.0, continuous_update=False, description='Brightness:', max=3.5), FloatSlider(value=1.0, continuous_update=False, description='Contrast:', max=3.5))), Label(value='Loading...'), FigureWidget({
+        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
+        'layout': {'dragmode': 'zoom',
+                   'hovermode': False,
+                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
+                   'title': 'Loading...',
+                   'xaxis': {'visible': False},
+                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
+    })), layout=Layout(height='768px', width='600px'))
+    >>> h = PlotlyImageViewer(with_bc=False).get_widget()
+    >>> h.children[-1].data[0]['uid']=0
+    >>> print(h)
+    VBox(children=(Label(value='Loading...'), FigureWidget({
+        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
+        'layout': {'dragmode': 'zoom',
+                   'hovermode': False,
+                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
+                   'title': 'Loading...',
+                   'xaxis': {'visible': False},
+                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
+    })), layout=Layout(height='768px', width='600px'))
+    """
+
     def __init__(self, width=VIEWER_WIDTH, with_bc=True):
         self._g = go.FigureWidget(data=[{
             'x': [0, 1],
@@ -367,7 +396,7 @@ class AbstractClassificationTask(WidgetObject):
                 self._progress_bar.value == (self.maximum_count - 1)):
             self._comment_field.value = 'Comments or Feedback?'
             self._comment_field.rows = 8
-            self._answer_region.children = (self._comment_field,) +\
+            self._answer_region.children = (self._comment_field,) + \
                                            self._answer_region.children
         if (self.maximum_count is not None) and (
                 self._progress_bar.value >= self.maximum_count):
@@ -400,6 +429,7 @@ class BinaryClassTask(AbstractClassificationTask):
     A class for handling binary (or trinary) classification problems
     bct = BinaryClassTask(['A', 'B'], task_data=None, unknown_option=None)
     """
+
     def __init__(self, labels, task_data, unknown_option, seed=None,
                  max_count=None):
         answer_choices = ['Yes', 'No']
