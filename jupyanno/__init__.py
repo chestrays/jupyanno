@@ -4,10 +4,9 @@ import os
 import warnings
 from collections import namedtuple
 from glob import glob
-from io import BytesIO, BytesIO
+from io import BytesIO
 from itertools import cycle
 from time import time
-
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import numpy as np
@@ -109,11 +108,14 @@ def binary_correct(c_row, label_col):
     :param c_row: row from a dataframe (dict-like)
     :param label_col: the colum where the label information resides
     :return: boolean if the value is correct or not
-    >>> binary_correct({'task': 'Pneumonia', 'value': 'Pneumonia', 'label': 'Pneumonia'}, 'value')
+    >>> test_row = {'task': 'Pneumonia', 'value': 'Pneumonia', 'label': 'Pneumonia'}
+    >>> binary_correct(test_row, 'value')
     True
-    >>> binary_correct({'task': 'Pneumonia', 'value': 'Influenza', 'label': 'Pneumonia'}, 'value')
+    >>> test_row['value'] = 'Influenza'
+    >>> binary_correct(test_row, 'value')
     False
-    >>> binary_correct({'task': 'Influenza', 'value': 'Pneumonia', 'label': None}, 'value')
+    >>> test_row = {'task': 'Influenza', 'value': 'Pneumonia', 'label': None}
+    >>> binary_correct(test_row, 'value')
     True
     """
     if c_row['label'] == c_row[label_col]:
