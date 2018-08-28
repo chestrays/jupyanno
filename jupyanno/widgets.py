@@ -1,3 +1,6 @@
+"""The widgets are the heart of jupyanno package and bring together
+tasks as task panels (with images) and answer panels (with buttons
+and multiple choice optiosn)"""
 import os
 import ipywidgets as ipw
 from glob import glob
@@ -18,10 +21,12 @@ from PIL import ImageEnhance as ie
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
 TaskResult = namedtuple(
-    'TaskResult', ['annotation_mode', 'task', 'item_id', 'label', 'viewing_info', 'comment'])
+    'TaskResult',
+    ['annotation_mode', 'task', 'item_id', 'label', 'viewing_info', 'comment'])
 
 VIEWER_WIDTH = '600px'
 
+# TODO: this needs to be moved to package resources
 if os.path.exists('load.gif'):
     with open('load.gif', 'rb') as f:
         LOAD_ANIMATION = f.read()
@@ -66,7 +71,7 @@ class SimpleImageViewer(WidgetObject):
     def get_viewing_info(self):
         out_info = {}
         if self.loaded_time is not None:
-            out_info['viewing_time'] = time()-self.loaded_time
+            out_info['viewing_time'] = time() - self.loaded_time
         return json.dumps(out_info)
 
 
@@ -95,10 +100,10 @@ def image_dict(c_img):
 
 
 class PlotlyImageViewer(WidgetObject):
-    def __init__(self, width = VIEWER_WIDTH, with_bc=True):
+    def __init__(self, width=VIEWER_WIDTH, with_bc=True):
         self._g = go.FigureWidget(data=[{
-            'x': [0, 1], 
-            'y': [0, 1], 
+            'x': [0, 1],
+            'y': [0, 1],
             'mode': 'markers',
             'marker': {'opacity': 0}}])
         with self._g.batch_update():
@@ -107,35 +112,39 @@ class PlotlyImageViewer(WidgetObject):
             # this can constract the axis (but we leave it off for now since it messes up some images)
             self._g.layout.yaxis.scaleanchor = 'x'
             self._g.layout.margin = {'l': 0, 'r': 0, 't': 0, 'b': 0}
-            
+
         self.scale_factor = 1.0
-        
+
         self._brightness = ipw.FloatSlider(value=1.0,
                                            min=0, max=3.5,
-                                           description='Brightness:', continuous_update=False)
+                                           description='Brightness:',
+                                           continuous_update=False)
         self._contrast = ipw.FloatSlider(value=1.0,
                                          min=0, max=3.5,
-                                         description='Contrast:', continuous_update=False)
-        
+                                         description='Contrast:',
+                                         continuous_update=False)
+
         def _select_to_brightness(_1, _2, ls_data):
             def _update_value(in_obj, x_vals):
-                diff = (x_vals[0]-x_vals[-1])/512
+                diff = (x_vals[0] - x_vals[-1]) / 512
                 max_val = in_obj.max
                 min_val = in_obj.min
-                in_obj.value = np.clip(in_obj.value+diff, min_val, max_val)
+                in_obj.value = np.clip(in_obj.value + diff, min_val, max_val)
+
             _update_value(self._brightness, ls_data.xs)
             _update_value(self._contrast, ls_data.ys)
             if not with_bc:
                 self._update_image(False)
-    
+
         self._g.data[0].on_selection(_select_to_brightness)
 
         self._plot_title = ipw.Label('')
-        
+
         self.clear_image()
-        
+
         self._g.layout.on_change(
-            lambda *args: self._handle_zoom(*args), 'xaxis.range', 'yaxis.range')
+            lambda *args: self._handle_zoom(*args), 'xaxis.range',
+            'yaxis.range')
         self.loaded_time = None
         if with_bc:
             self._brightness.observe(
@@ -145,10 +154,11 @@ class PlotlyImageViewer(WidgetObject):
             bc_tools = [ipw.HBox([self._brightness, self._contrast])]
         else:
             bc_tools = []
-        
+
         bc_tools += [self._plot_title]
         super().__init__(
-            ipw.VBox(bc_tools+[self._g], layout=ipw.Layout(width=width, height="768px"))
+            ipw.VBox(bc_tools + [self._g],
+                     layout=ipw.Layout(width=width, height="768px"))
         )
 
     def clear_image(self):
@@ -160,8 +170,8 @@ class PlotlyImageViewer(WidgetObject):
             self._g.layout.images = []
             self._g.layout.title = 'Loading...'
             self._plot_title.value = 'Loading...'
-            self._g.layout.dragmode = 'zoom' # or can be set to pan
-            self._g.layout.hovermode = False # get ride of the annoying popup in the corners
+            self._g.layout.dragmode = 'zoom'  # or can be set to pan
+            self._g.layout.hovermode = False  # get ride of the annoying popup in the corners
 
     def load_image_path(self, in_path, **kwargs):
         self.clear_image()
@@ -172,8 +182,9 @@ class PlotlyImageViewer(WidgetObject):
         for c_arg in min_args:
             if c_arg not in title_args:
                 title_args[c_arg] = ''
-            
-        title = 'Patient: {Patient Age}{Patient Gender}, View Position: {View Position}'.format(**title_args)
+
+        title = 'Patient: {Patient Age}{Patient Gender}, View Position: {View Position}'.format(
+            **title_args)
         self._update_image(True, title=title)
 
     def _update_image(self, refresh_view=True, title=''):
@@ -183,11 +194,14 @@ class PlotlyImageViewer(WidgetObject):
             img_dict = image_dict(proc_img)
             if refresh_view:
                 with self._g.batch_update():
-                    self._g.data[0].x = [0, img_dict['sizex']*self.scale_factor]
-                    self._g.data[0].y = [0, img_dict['sizey']*self.scale_factor]
+                    self._g.data[0].x = [0,
+                                         img_dict['sizex'] * self.scale_factor]
+                    self._g.data[0].y = [0,
+                                         img_dict['sizey'] * self.scale_factor]
                     self._g.layout.images = [img_dict]
                     self._plot_title.value = title
-                    self._g.layout.yaxis.range = [0, img_dict['sizey']*self.scale_factor]
+                    self._g.layout.yaxis.range = [0, img_dict[
+                        'sizey'] * self.scale_factor]
 
                 self.loaded_time = time()
             else:
@@ -198,12 +212,13 @@ class PlotlyImageViewer(WidgetObject):
 
     def get_viewing_info(self):
         if self.loaded_time is not None:
-            self.out_info['viewing_time'] = time()-self.loaded_time
+            self.out_info['viewing_time'] = time() - self.loaded_time
         return json.dumps(self.out_info)
 
 
 class MultipleChoiceQuestion(WidgetObject):
-    def __init__(self, question, labels, question_prefix='', width="150px", buttons_per_row=3):
+    def __init__(self, question, labels, question_prefix='', width="150px",
+                 buttons_per_row=3):
         self.question_box = ipw.HTML(value='')
         self.labels = labels
         self.width = width
@@ -214,7 +229,8 @@ class MultipleChoiceQuestion(WidgetObject):
         self.set_question(question)
 
         self.submit_func = None
-        super().__init__(ipw.VBox([self.question_box]+self.button_rows, layout=ipw.Layout(width="250px")))
+        super().__init__(ipw.VBox([self.question_box] + self.button_rows,
+                                  layout=ipw.Layout(width="250px")))
 
     def disable_buttons(self, disabled_status=True):
         for c_button in self._button_objs:
@@ -242,6 +258,7 @@ class MultipleChoiceQuestion(WidgetObject):
                 self.disable_buttons()
                 self.submit_func(MultipleChoiceAnswer(
                     answer=btn.description, question=self.question))
+
         btn.on_click(on_click)
         return btn
 
@@ -260,24 +277,29 @@ class MultipleChoiceQuestion(WidgetObject):
 
 
 class AbstractClassificationTask(WidgetObject):
-    def __init__(self, labels, task_data, seed=None, maximum_count=None, with_bc=False, 
+    def __init__(self, labels, task_data, seed=None, maximum_count=None,
+                 with_bc=False,
                  image_panel_width=VIEWER_WIDTH):
         self.labels = labels
-        self._image_dict = {c_row[task_data.image_key_col]: (os.path.join(task_data.base_img_dir, 
-                                                                          c_row[task_data.image_key_col]),
-                                                            c_row) 
-                            for _, c_row in task_data.data_df.iterrows()}
+        self._image_dict = {
+            c_row[task_data.image_key_col]: (
+            os.path.join(task_data.base_img_dir,
+                         c_row[
+                             task_data.image_key_col]),
+            c_row)
+            for _, c_row in task_data.data_df.iterrows()}
         self._image_df = task_data.data_df
-        
+
         self.image_keys = sorted(list(self._image_dict.keys()))
         self.submit_event = None
-        self.task_widget = PlotlyImageViewer(with_bc=with_bc, width=image_panel_width)
+        self.task_widget = PlotlyImageViewer(with_bc=with_bc,
+                                             width=image_panel_width)
         self.answer_widget.on_submit(lambda x: self._local_submit(x))
         self.current_image_id = None
         self.set_seed(seed)
         self.maximum_count = maximum_count
         self._comment_field = ipw.Textarea(layout=ipw.Layout(width="200px"))
-          
+
         self._progress_bar = ipw.IntProgress(
             value=0,
             min=0,
@@ -287,17 +309,17 @@ class AbstractClassificationTask(WidgetObject):
             orientation='horizontal'
         )
         self._local_submit(MultipleChoiceAnswer(question=None, answer=None))
-        
+
         # we want to append to it later
-        self._answer_region = ipw.VBox([self.answer_widget.get_widget()])      
-        
+        self._answer_region = ipw.VBox([self.answer_widget.get_widget()])
+
         super().__init__(
             ipw.HBox([
                 ipw.VBox([self._progress_bar,
                           self.task_widget.get_widget()
-                         ], layout=ipw.Layout(width=image_panel_width)
-                        ),
-                 self._answer_region
+                          ], layout=ipw.Layout(width=image_panel_width)
+                         ),
+                self._answer_region
             ])
         )
 
@@ -325,7 +347,7 @@ class AbstractClassificationTask(WidgetObject):
         # harvest results
         generic_info = dict(item_id=self.current_image_id,
                             viewing_info=self.get_viewing_info(),
-                           comment=self._comment_field.value)
+                            comment=self._comment_field.value)
         # clear the image
         self.task_widget.clear_image()
         if mc_answer.answer is not None:
@@ -338,11 +360,14 @@ class AbstractClassificationTask(WidgetObject):
 
         if self.submit_event is not None:
             self.submit_event(c_task)
-        if (self.maximum_count is not None) and (self._progress_bar.value == (self.maximum_count-1)):
-            self._comment_field.value='Comments or Feedback?'
-            self._comment_field.rows=8
-            self._answer_region.children = (self._comment_field,)+self._answer_region.children
-        if (self.maximum_count is not None) and (self._progress_bar.value >= self.maximum_count):
+        if (self.maximum_count is not None) and (
+                self._progress_bar.value == (self.maximum_count - 1)):
+            self._comment_field.value = 'Comments or Feedback?'
+            self._comment_field.rows = 8
+            self._answer_region.children = (
+                                               self._comment_field,) + self._answer_region.children
+        if (self.maximum_count is not None) and (
+                self._progress_bar.value >= self.maximum_count):
             self.task_widget.clear_image()
             self.answer_widget.get_widget().close()
             self._comment_field.close()
@@ -368,7 +393,8 @@ class MultiClassTask(AbstractClassificationTask):
 
 
 class BinaryClassTask(AbstractClassificationTask):
-    def __init__(self, labels, task_data, unknown_option, seed=None, max_count=None):
+    def __init__(self, labels, task_data, unknown_option, seed=None,
+                 max_count=None):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)

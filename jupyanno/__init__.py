@@ -42,8 +42,6 @@ def _get_user_id():
     return qs_info.get('user', ['nobody'])[0]
 
 
-
-
 def safe_json_load(in_str):
     try:
         return json.loads(in_str)

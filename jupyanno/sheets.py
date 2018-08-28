@@ -9,8 +9,10 @@ from six.moves.urllib.request import urlopen
 
 _CELLSET_ID = "AIzaSyC8Zo-9EbXgHfqNzDxVb_YS_IIZBWtvoJ4"
 
+
 def get_task_sheet(in_task):
     return get_sheet_as_df(sheet_api_url(in_task.sheet_id), _CELLSET_ID)
+
 
 def get_sheet_as_df(base_url, kk, columns="A:AG"):
     """
@@ -44,7 +46,6 @@ def sheet_api_url(sheet_id):
         id=sheet_id)
 
 
-
 def get_questions(in_url):
     res = urlopen(in_url)
     soup = BeautifulSoup(res.read(), 'html.parser')
@@ -53,6 +54,7 @@ def get_questions(in_url):
 
     def get_name(f): return get_names(f)[0] if len(
         get_names(f)) > 0 else 'unknown'
+
     all_questions = soup.form.findChildren(
         attrs={'name': lambda x: x and x.startswith('entry.')})
     return {get_name(q): q['name'] for q in all_questions}
@@ -72,5 +74,6 @@ def submit_response(form_url, cur_questions, verbose=False, **answers):
     if verbose:
         print(form_data)
     user_agent = {'Referer': form_url,
-                  'User-Agent': "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36"}
+                  'User-Agent': "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537\
+                  .36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36"}
     return requests.post(submit_url, data=form_data, headers=user_agent)
