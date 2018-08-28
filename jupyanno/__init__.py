@@ -104,6 +104,18 @@ def read_annotation(in_task):
 
 
 def binary_correct(c_row, label_col):
+    """
+    determine if the row is correct or not
+    :param c_row: row from a dataframe (dict-like)
+    :param label_col: the colum where the label information resides
+    :return: boolean if the value is correct or not
+    >>> binary_correct({'task': 'Pneumonia', 'value': 'Pneumonia', 'label': 'Pneumonia'}, 'value')
+    True
+    >>> binary_correct({'task': 'Pneumonia', 'value': 'Influenza', 'label': 'Pneumonia'}, 'value')
+    False
+    >>> binary_correct({'task': 'Influenza', 'value': 'Pneumonia', 'label': None}, 'value')
+    True
+    """
     if c_row['label'] == c_row[label_col]:
         return True
     elif c_row['label'] is None:
