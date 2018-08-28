@@ -1,22 +1,19 @@
 import base64
+import inspect
 import json
 import os
-import warnings
 from collections import namedtuple
-from glob import glob
 from io import BytesIO
 from itertools import cycle
-from time import time
-import ipywidgets as ipw
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from IPython.display import display, Javascript, HTML
+from IPython.display import display, Javascript
 from PIL import Image
 from scipy.stats import binom
 from six.moves.urllib.parse import urlparse, parse_qs
-from six.moves.urllib.request import urlopen
 
 TaskData = namedtuple('TaskData',
                       ['task', 'data_df', 'label_col', 'image_key_col',
@@ -37,7 +34,15 @@ def setup_appmode():
 
 
 def _get_user_id():
-    cur_url = globals().get('jupyter_notebook_url', 'nobody')
+    cur_url = globals().get('jupyter_notebook_url', None)
+    if cur_url is None:
+        # black magic to get the 'injected' variable
+        frame = inspect.currentframe()
+        try:
+            out_locals = frame.f_back.f_locals
+            cur_url = out_locals.get('jupyter_notebook_url', 'nobody')
+        finally:
+            del frame
     qs_info = parse_qs(urlparse(cur_url).query)
     return qs_info.get('user', ['nobody'])[0]
 

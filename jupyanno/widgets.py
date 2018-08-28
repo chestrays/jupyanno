@@ -1,22 +1,17 @@
 """The widgets are the heart of jupyanno package and bring together
 tasks as task panels (with images) and answer panels (with buttons
 and multiple choice optiosn)"""
-import os
-import ipywidgets as ipw
-from glob import glob
+import base64
 import json
-import pandas as pd
-import numpy as np
-from PIL import Image
+import os
+from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
-from collections import namedtuple, defaultdict
 
-from plotly.widgets import GraphWidget
+import ipywidgets as ipw
+import numpy as np
 import plotly.graph_objs as go
-import plotly.plotly as py
-import base64
-from PIL import ImageEnhance as ie
+from PIL import Image, ImageEnhance as ie
 
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
