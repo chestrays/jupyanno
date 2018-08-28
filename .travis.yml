@@ -13,11 +13,10 @@ env:
 
 install: 
   - source build_tools/travis_install.sh
-  - pip install pytest==3.7.1
   - pip install pytest-cov codecov mypy
 
 script:
-  - mypy -m jupyanno --ignore-missing-imports
+  - mypy -p jupyanno --ignore-missing-imports
   - pytest --cov=jupyanno
   - codecov
   - shopt -s globstar
