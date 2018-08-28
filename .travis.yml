@@ -11,7 +11,9 @@ env:
   matrix:
     - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
 
-install: source build_tools/travis_install.sh
+install: 
+  - source build_tools/travis_install.sh
+  - pip install pytest-cov codecov
 
 script:
   - shopt -s globstar
@@ -22,3 +24,6 @@ script:
         exit 1;
     fi;
     done
+  - pytest
+  - pytest --cov=jupyanno
+  - codecov
