@@ -109,6 +109,7 @@ def read_task_file(in_path):
         label_col = annotation_task['dataset']['output_labels']
         image_key_col = annotation_task['dataset']['image_path']
         base_img_dir = annotation_task['dataset']['base_image_directory']
+        base_img_dir = os.path.join(os.path.dirname(in_path), base_img_dir)
         base_sheet_url = annotation_task['google_forms']['sheet_url']
         sheet_id = \
             base_sheet_url.strip('?usp=sharing').strip('/edit').split('/')[-1]
