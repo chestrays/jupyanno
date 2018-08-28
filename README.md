@@ -1,4 +1,4 @@
-# jupyanno 
+# jupyanno [![Build Status](https://travis-ci.org/chestrays/jupyanno.svg?branch=master)](https://travis-ci.org/chestrays/jupyanno) [![codecov](https://codecov.io/gh/chestrays/jupyanno/branch/master/graph/badge.svg)](https://codecov.io/gh/chestrays/jupyanno)
 
 A simple set of jupyter-based tools for quickly annotating images using IPython widgets. The toolkit is made to be easily extensible and suggestions / improvements are welcome.
 

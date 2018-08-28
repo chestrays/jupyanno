@@ -11,7 +11,9 @@ env:
   matrix:
     - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
 
-install: source build_tools/travis_install.sh
+install: 
+  - source build_tools/travis_install.sh
+  - pip install pytest-cov codecov mypy
 
 script:
   - shopt -s globstar
@@ -22,3 +24,7 @@ script:
         exit 1;
     fi;
     done
+  - python -c 'import matplotlib;f=open(matplotlib.matplotlib_fname(), "w");f.write("backend: Agg");f.close()'
+  - mypy -m jupyanno --ignore-missing-imports
+  - pytest --cov=jupyanno
+  - codecov
