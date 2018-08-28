@@ -1,6 +1,6 @@
 """The widgets are the heart of jupyanno package and bring together
 tasks as task panels (with images) and answer panels (with buttons
-and multiple choice optiosn)"""
+and multiple choice options)"""
 import base64
 import json
 import os
@@ -104,7 +104,8 @@ class PlotlyImageViewer(WidgetObject):
         with self._g.batch_update():
             self._g.layout.xaxis.visible = False
             self._g.layout.yaxis.visible = False
-            # this can constract the axis (but we leave it off for now since it messes up some images)
+            # this can constract the axis
+            # (but we leave it off for now since it messes up some images)
             self._g.layout.yaxis.scaleanchor = 'x'
             self._g.layout.margin = {'l': 0, 'r': 0, 't': 0, 'b': 0}
 
@@ -166,7 +167,8 @@ class PlotlyImageViewer(WidgetObject):
             self._g.layout.title = 'Loading...'
             self._plot_title.value = 'Loading...'
             self._g.layout.dragmode = 'zoom'  # or can be set to pan
-            self._g.layout.hovermode = False  # get ride of the annoying popup in the corners
+            # get ride of the annoying popup in the corners
+            self._g.layout.hovermode = False
 
     def load_image_path(self, in_path, **kwargs):
         self.clear_image()
@@ -178,9 +180,9 @@ class PlotlyImageViewer(WidgetObject):
             if c_arg not in title_args:
                 title_args[c_arg] = ''
 
-        title = 'Patient: {Patient Age}{Patient Gender}, View Position: {View Position}'.format(
-            **title_args)
-        self._update_image(True, title=title)
+        title_str = 'Patient:{Patient Age}{Patient Gender},'
+        title_str += 'View Position: {View Position}'
+        self._update_image(True, title=title.format(**title_args))
 
     def _update_image(self, refresh_view=True, title=''):
         if self._raw_img is not None:
@@ -272,16 +274,22 @@ class MultipleChoiceQuestion(WidgetObject):
 
 
 class AbstractClassificationTask(WidgetObject):
+    """
+    A class for sharing functionality between multi and binary
+    classification problems. It probably does not make sense to use outside of
+    these cases and should not be instantiated alone
+    """
+
     def __init__(self, labels, task_data, seed=None, maximum_count=None,
                  with_bc=False,
                  image_panel_width=VIEWER_WIDTH):
         self.labels = labels
         self._image_dict = {
             c_row[task_data.image_key_col]: (
-            os.path.join(task_data.base_img_dir,
-                         c_row[
-                             task_data.image_key_col]),
-            c_row)
+                os.path.join(task_data.base_img_dir,
+                             c_row[
+                                 task_data.image_key_col]),
+                c_row)
             for _, c_row in task_data.data_df.iterrows()}
         self._image_df = task_data.data_df
 
@@ -359,8 +367,8 @@ class AbstractClassificationTask(WidgetObject):
                 self._progress_bar.value == (self.maximum_count - 1)):
             self._comment_field.value = 'Comments or Feedback?'
             self._comment_field.rows = 8
-            self._answer_region.children = (
-                                               self._comment_field,) + self._answer_region.children
+            self._answer_region.children = (self._comment_field,) +\
+                                           self._answer_region.children
         if (self.maximum_count is not None) and (
                 self._progress_bar.value >= self.maximum_count):
             self.task_widget.clear_image()
@@ -388,14 +396,19 @@ class MultiClassTask(AbstractClassificationTask):
 
 
 class BinaryClassTask(AbstractClassificationTask):
+    """
+    A class for handling binary (or trinary) classification problems
+    bct = BinaryClassTask(['A', 'B'], task_data=None, unknown_option=None)
+    """
     def __init__(self, labels, task_data, unknown_option, seed=None,
                  max_count=None):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
+        prefix = 'Does this patient have'
         self.answer_widget = MultipleChoiceQuestion('',
                                                     answer_choices,
-                                                    question_prefix='Does this patient have',
+                                                    question_prefix=prefix,
                                                     buttons_per_row=1)
         super().__init__(labels, task_data, seed, max_count)
 

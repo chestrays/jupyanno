@@ -34,6 +34,17 @@ def setup_appmode():
 
 
 def _get_user_id():
+    """
+    Get the userid from the `jupyter_notebook_url`
+    injected by the appmode extension (if in use)
+    otherwise return a 'nobody'
+    :return: appmode username of current user
+    >>> _get_user_id()
+    'nobody'
+    >>> jupyter_notebook_url = 'https://a.b.c?user=dan#hello'
+    >>> _get_user_id()
+    'dan'
+    """
     cur_url = globals().get('jupyter_notebook_url', None)
     if cur_url is None:
         # black magic to get the 'injected' variable
@@ -162,6 +173,39 @@ def raw_html_render(temp_df):
     shouldn't be escaped or cropped
     :param temp_df:
     :return:
+    >>> f=pd.DataFrame({'k': [1], 'b': ['<a>']})
+    >>> print(f.to_html())
+    <table border="1" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>k</th>
+          <th>b</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>0</th>
+          <td>1</td>
+          <td>&lt;a&gt;</td>
+        </tr>
+      </tbody>
+    </table>
+    >>> print(raw_html_render(f))
+    <table border="1" class="dataframe table table-striped table-hover">
+      <thead>
+        <tr style="text-align: right;">
+          <th>k</th>
+          <th>b</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><a></td>
+        </tr>
+      </tbody>
+    </table>
     """
     old_wid = pd.get_option('display.max_colwidth')
     pd.set_option('display.max_colwidth', -1)
