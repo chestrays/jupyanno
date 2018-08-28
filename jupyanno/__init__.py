@@ -22,8 +22,6 @@ TaskData = namedtuple('TaskData',
                       ['task', 'data_df', 'label_col', 'image_key_col',
                        'base_img_dir', 'base_sheet_url', 'sheet_id'])
 
-_CELLSET_ID = "AIzaSyC8Zo-9EbXgHfqNzDxVb_YS_IIZBWtvoJ4"
-
 
 def setup_appmode():
     js_str = """$('#appmode-leave').hide()
@@ -44,36 +42,6 @@ def _get_user_id():
     return qs_info.get('user', ['nobody'])[0]
 
 
-def get_sheet_as_df(base_url, kk, columns="A:AG"):
-    """
-    Gets the sheet as a list of Dicts (directly importable to Pandas)
-    :return:
-    """
-    try:
-        # TODO: we should probably get the whole sheet
-        all_vals = "{base_url}/{cols}?key={kk}".format(base_url=base_url,
-                                                       cols=columns,
-
-                                                       kk=kk)
-        t_data = json.loads(urlopen(all_vals).read().decode('latin1'))[
-            'values']
-        frow = t_data.pop(0)
-
-        return pd.DataFrame([
-            dict([(key, '' if idx >= len(irow) else irow[idx])
-                  for idx, key in enumerate(frow)]) for irow in
-            t_data])
-    except IOError as e:
-        warnings.warn(
-            'Sheet could not be accessed, check internet connectivity, \
-            proxies and permissions: {}'.format(
-                e))
-        return pd.DataFrame([{}])
-
-
-def sheet_api_url(sheet_id):
-    return "https://sheets.googleapis.com/v4/spreadsheets/{id}/values".format(
-        id=sheet_id)
 
 
 def safe_json_load(in_str):
@@ -84,8 +52,8 @@ def safe_json_load(in_str):
         return dict()
 
 
-def read_annotation(in_task):
-    annot_df = get_sheet_as_df(sheet_api_url(in_task.sheet_id), _CELLSET_ID)
+def read_annotation(raw_df):
+    annot_df = raw_df.copy()
     annot_df['Timestamp'] = pd.to_datetime(annot_df['Timestamp'])
     annot_df['viewing_time'] = annot_df['viewing_info'].map(
         lambda x: safe_json_load(x).get('viewing_time', 0))
