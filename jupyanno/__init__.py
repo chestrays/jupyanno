@@ -48,6 +48,18 @@ def _get_user_id():
 
 
 def safe_json_load(in_str):
+    """
+    safely load json strings as dictionaries
+    :param in_str: string with encoded json
+    :return: dict
+    >>> safe_json_load('{"bob": 5}')
+    {'bob': 5}
+    >>> safe_json_load('{"bob": [1,2,3]}')
+    {'bob': [1, 2, 3]}
+    >>> safe_json_load('{"bob": [1,2,3}')
+    Invalid json row Expecting ',' delimiter: line 1 column 15 (char 14)
+    {}
+    """
     try:
         return json.loads(in_str)
     except Exception as e:

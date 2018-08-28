@@ -16,6 +16,9 @@ install:
   - pip install pytest-cov codecov mypy
 
 script:
+  - mypy -m jupyanno --ignore-missing-imports
+  - pytest --cov=jupyanno
+  - codecov
   - shopt -s globstar
   - for nb in **/*ipynb; do
     jupyter nbconvert --ExecutePreprocessor.timeout=3600 --execute "$nb" --to markdown |& tee nb_to_md.txt;
@@ -24,6 +27,3 @@ script:
         exit 1;
     fi;
     done
-  - mypy -m jupyanno --ignore-missing-imports
-  - pytest --cov=jupyanno
-  - codecov
