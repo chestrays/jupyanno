@@ -13,6 +13,7 @@ env:
 
 install: 
   - source build_tools/travis_install.sh
+  - pip install pytest==3.7.1
   - pip install pytest-cov codecov mypy
 
 script:
