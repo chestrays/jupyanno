@@ -9,21 +9,18 @@ cache:
 
 env:
   matrix:
-    - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
+    - DISTRIB="conda" PYTHON_VERSION="3.6" TO_TEST=CODE
+    - DISTRIB="conda" PYTHON_VERSION="3.6" TO_TEST=NOTEBOOKS
+    - DISTRIB="conda" PYTHON_VERSION="3.6" TO_TEST=STYLE
+
 
 install: 
   - source build_tools/travis_install.sh
-  - pip install pytest-cov codecov mypy
+  - pip install pytest-cov codecov mypy flake8
 
 script:
-  - mypy -p jupyanno --ignore-missing-imports
-  - pytest --cov=jupyanno
-  - codecov
-  - shopt -s globstar
-  - for nb in **/*ipynb; do
-    jupyter nbconvert --ExecutePreprocessor.timeout=3600 --execute "$nb" --to markdown |& tee nb_to_md.txt;
-    traceback=$(grep "Traceback (most recent call last):" nb_to_md.txt);
-    if [[ $traceback ]]; then
-        exit 1;
-    fi;
-    done
+  - if [ "$TO_TEST" = "CODE" ]; then mypy -p jupyanno --ignore-missing-imports; fi
+  - if [ "$TO_TEST" = "CODE" ]; then pytest --cov=jupyanno; fi
+  - if [ "$TO_TEST" = "CODE" ]; then codecov; fi
+  - if [ "$TO_TEST" = "STYLE" ]; then flake8 --ignore E501,F401; fi
+  - if [ "$TO_TEST" = "STYLE" ]; then ./build_tools/travis_notebooks.sh; fi

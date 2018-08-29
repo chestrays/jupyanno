@@ -332,10 +332,11 @@ class AbstractClassificationTask(WidgetObject):
         self.maximum_count = maximum_count
         self._comment_field = ipw.Textarea(layout=ipw.Layout(width="200px"))
 
+        img_count = len(self._image_dict)
         self._progress_bar = ipw.IntProgress(
             value=0,
             min=0,
-            max=len(images) if maximum_count is None else maximum_count,
+            max=img_count if maximum_count is None else maximum_count,
             description='Items Done:',
             bar_style='info',
             orientation='horizontal'
@@ -396,8 +397,9 @@ class AbstractClassificationTask(WidgetObject):
                 self._progress_bar.value == (self.maximum_count - 1)):
             self._comment_field.value = 'Comments or Feedback?'
             self._comment_field.rows = 8
-            self._answer_region.children = (self._comment_field,) + \
-                                           self._answer_region.children
+            out_child = (self._comment_field,) + self._answer_region.children
+
+            self._answer_region.children = out_child
         if (self.maximum_count is not None) and (
                 self._progress_bar.value >= self.maximum_count):
             self.task_widget.clear_image()

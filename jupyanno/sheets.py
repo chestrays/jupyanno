@@ -50,10 +50,12 @@ def get_questions(in_url):
     res = urlopen(in_url)
     soup = BeautifulSoup(res.read(), 'html.parser')
 
-    def get_names(f): return [v for k, v in f.attrs.items() if 'label' in k]
+    def get_names(f):
+        return [v for k, v in f.attrs.items() if 'label' in k]
 
-    def get_name(f): return get_names(f)[0] if len(
-        get_names(f)) > 0 else 'unknown'
+    def get_name(f):
+        return get_names(f)[0] if len(
+            get_names(f)) > 0 else 'unknown'
 
     all_questions = soup.form.findChildren(
         attrs={'name': lambda x: x and x.startswith('entry.')})

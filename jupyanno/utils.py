@@ -68,7 +68,8 @@ def safe_json_load(in_str):
         return dict()
 
 
-def _wrap_uri(data_uri): return "data:image/png;base64,{0}".format(data_uri)
+def _wrap_uri(data_uri):
+    return "data:image/png;base64,{0}".format(data_uri)
 
 
 def raw_html_render(temp_df):
