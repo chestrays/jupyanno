@@ -1,8 +1,10 @@
 import base64
+import base64 as b64
 import inspect
 import json
 from io import BytesIO
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from IPython.display import display, Javascript
@@ -136,6 +138,7 @@ def path_to_img(in_path):
                                      ).decode("ascii").replace("\n", ""))
     return '<img src="{uri}"/>'.format(uri=uri)
 
+
 def fancy_format(in_str, **kwargs):
     """
     A format command for strings that already have lots of curly brackets (ha!)
@@ -149,3 +152,15 @@ def fancy_format(in_str, **kwargs):
     for key in kwargs.keys():
         new_str = new_str.replace('{{%s}}' % key, '{%s}' % key)
     return new_str.format(**kwargs)
+
+
+def encode_numpy_b64(in_img):
+    # type: (np.ndarray) -> str
+    """
+    Encode numpy arrays as b64 strings
+    :param in_img:
+    :return:
+    >>> encode_numpy_b64(np.eye(2))
+    'AAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8='
+    """
+    return b64.b64encode(in_img.tobytes()).decode()
