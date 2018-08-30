@@ -4,7 +4,7 @@ import json
 
 import numpy as np
 from IPython.display import Javascript, display
-
+from typing import Callable, Tuple
 from .utils import fancy_format, encode_numpy_b64
 
 """
@@ -19,7 +19,7 @@ assert sum([a==b for a, b in zip(encode_img(kk), b64_data)])==len(b64_data))
 
 def gen_numpy_panel(panel_text, panel_arr,
                     as_full_page=True, panel_id='panel1'):
-    # type: (str, np.ndarray, bool, str) -> Tuple[str, Callable[], str])
+    # type: (str, np.ndarray, bool, str) -> Tuple[str, Callable, str]
     """
     Create a full numpy panel
     :param panel_text: the name to put on the panel
