@@ -1,5 +1,4 @@
 import base64
-import base64 as b64
 import inspect
 import json
 from io import BytesIO
@@ -129,6 +128,11 @@ def raw_html_render(temp_df):
 
 
 def path_to_img(in_path):
+    """
+    Open an image as return a URL
+    :param in_path: path to load
+    :return: img html tag
+    """
     c_img_data = Image.open(in_path)
     c_img_data = c_img_data.convert('RGB')
     out_img_data = BytesIO()
@@ -163,4 +167,4 @@ def encode_numpy_b64(in_img):
     >>> encode_numpy_b64(np.eye(2))
     'AAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8='
     """
-    return b64.b64encode(in_img.tobytes()).decode()
+    return base64.b64encode(in_img.tobytes()).decode()
