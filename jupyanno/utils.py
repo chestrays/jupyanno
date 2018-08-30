@@ -135,3 +135,17 @@ def path_to_img(in_path):
     uri = _wrap_uri(base64.b64encode(out_img_data.read()
                                      ).decode("ascii").replace("\n", ""))
     return '<img src="{uri}"/>'.format(uri=uri)
+
+def fancy_format(in_str, **kwargs):
+    """
+    A format command for strings that already have lots of curly brackets (ha!)
+    :param in_str:
+    :param kwargs: the arguments to substitute
+    :return:
+    >>> fancy_format('{haha} {dan} {bob}', dan = 1, bob = 2)
+    '{haha} 1 2'
+    """
+    new_str = in_str.replace('{', '{{').replace('}', '}}')
+    for key in kwargs.keys():
+        new_str = new_str.replace('{{%s}}' % key, '{%s}' % key)
+    return new_str.format(**kwargs)
