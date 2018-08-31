@@ -1,10 +1,11 @@
 """tools for making self-contained cornerstone widgetsx"""
 
 import json
+from typing import Callable, Tuple
 
 import numpy as np
 from IPython.display import Javascript, display
-from typing import Callable, Tuple
+
 from .utils import fancy_format, encode_numpy_b64
 
 """
@@ -84,7 +85,6 @@ def make_pyloader_js(in_arr):
     >>> simple_html.split('minPixelValue')[-1][:8]
     ': -3000.'
     """
-    # make_pyloader_js(np.eye(3))
     if len(in_arr.shape) != 2:
         raise NotImplementedError(
             'Does not handle shape:{}'.format(in_arr.shape))
@@ -101,6 +101,90 @@ def make_pyloader_js(in_arr):
                         height=h, image_data=out_b64,
                         offset=offset, min_val=min_val, max_val=max_val)
 
+
+def make_pyimage_js(in_arr):
+    # type: (np.ndarray) -> str
+    """
+    Makes a Cornerstone image from a numpy array
+    :param in_arr: numpy array
+    :return:
+    >>> simple_html = make_pyimage_js(np.eye(3))
+    >>> len(simple_html)
+    1103
+    >>> 'loadPythonImage' in simple_html
+    False
+    >>> simple_html.split('sizeInBytes')[-1][:11]
+    ': 3 * 3 * 2'
+    >>> ct_img = 6000*np.eye(7)-3000
+    >>> simple_html = make_pyimage_js(ct_img)
+    >>> simple_html.split('sizeInBytes')[-1][:11]
+    ': 7 * 7 * 2'
+    >>> simple_html.split('intercept')[-1][:8]
+    ': -3000.'
+    >>> simple_html.split('minPixelValue')[-1][:8]
+    ': -3000.'
+    """
+    if len(in_arr.shape) != 2:
+        raise NotImplementedError(
+            'Does not handle shape:{}'.format(in_arr.shape))
+    offset = in_arr.min()
+    min_val = offset
+    max_val = in_arr.max()
+    wc = in_arr.mean()
+    ww = in_arr.std()
+    new_arr = in_arr.astype(np.float64) - offset
+    new_arr = new_arr.astype(np.uint16)
+    out_b64 = encode_numpy_b64(new_arr)
+    h, w = in_arr.shape
+    return fancy_format(PYIMG_JS, window_center=wc, window_width=ww, width=w,
+                        height=h, image_data=out_b64,
+                        offset=offset, min_val=min_val, max_val=max_val)
+
+
+PYIMG_JS = """
+function str2ab(str) {
+    var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+    var bufView = new Uint16Array(buf);
+    var index = 0;
+    for (var i=0, strLen=str.length; i<strLen; i+=2) {
+        var lower = str.charCodeAt(i);
+        var upper = str.charCodeAt(i+1);
+        bufView[index] = lower + (upper <<8);
+        index++;
+    }
+    return bufView;
+}
+
+function parsePixelData(base64PixelData)
+{
+    var pixelDataAsString = window.atob(base64PixelData);
+    var pixelData = str2ab(pixelDataAsString);
+    return pixelData;
+}
+var imageB64Data = "{image_data}"
+var imagePixelData = parsePixelData(imageB64Data);
+function getPixelData() {
+    return imagePixelData;
+}
+var image = {
+    imageId: 'test',
+    minPixelValue: {min_val},
+    maxPixelValue: {max_val},
+    slope: 1.0,
+    intercept: {offset},
+    windowCenter : {window_center},
+    windowWidth : {window_width},
+    getPixelData: getPixelData,
+    rows: {height},
+    columns: {width},
+    height: {height},
+    width: {width},
+    color: false,
+    columnPixelSpacing: .8984375,
+    rowPixelSpacing: .8984375,
+    sizeInBytes: {width} * {height} * 2
+};
+"""
 
 PYLOAD_JS = """
 (function (cs) {
