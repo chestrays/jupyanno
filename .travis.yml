@@ -16,7 +16,7 @@ env:
 
 install: 
   - source build_tools/travis_install.sh
-  - pip install pytest-cov codecov mypy flake8
+  - pip install pytest-cov codecov mypy flake8 nose
 
 script:
   - if [ "$TO_TEST" = "CODE" ]; then mypy -p jupyanno --ignore-missing-imports; fi

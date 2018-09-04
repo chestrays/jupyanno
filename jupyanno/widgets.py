@@ -429,15 +429,14 @@ class MultiClassTask(AbstractClassificationTask):
 class BinaryClassTask(AbstractClassificationTask):
     """
     A class for handling binary (or trinary) classification problems
-    bct = BinaryClassTask(['A', 'B'], task_data=None, unknown_option=None)
     """
 
     def __init__(self, labels, task_data, unknown_option, seed=None,
-                 max_count=None):
+                 max_count=None, prefix='Does this patient have'):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
-        prefix = 'Does this patient have'
+
         self.answer_widget = MultipleChoiceQuestion('',
                                                     answer_choices,
                                                     question_prefix=prefix,
