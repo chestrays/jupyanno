@@ -8,15 +8,6 @@ from IPython.display import Javascript, display
 
 from .utils import fancy_format, encode_numpy_b64
 
-"""
-useful tests to implement
-with open('img_junk.txt', 'r') as f:
-    b64_data = f.read().strip()
-    k = b64.b64decode(b64_data)
-    kk = np.frombuffer(k, dtype=np.uint16).reshape((256, 256))
-assert sum([a==b for a, b in zip(encode_img(kk), b64_data)])==len(b64_data))
-"""
-
 
 def gen_numpy_panel(panel_text, panel_arr,
                     as_full_page=True, panel_id='panel1'):
