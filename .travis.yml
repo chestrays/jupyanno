@@ -19,8 +19,8 @@ install:
   - pip install pytest-cov codecov mypy flake8 nose
 
 script:
-  - if [ "$TO_TEST" = "CODE" ]; then mypy -p jupyanno --ignore-missing-imports; fi
   - if [ "$TO_TEST" = "CODE" ]; then pytest --cov=jupyanno; fi
   - if [ "$TO_TEST" = "CODE" ]; then codecov; fi
   - if [ "$TO_TEST" = "STYLE" ]; then flake8 --ignore E501,F401; fi
+  - if [ "$TO_TEST" = "STYLE" ]; then mypy -p jupyanno --ignore-missing-imports; fi
   - if [ "$TO_TEST" = "NOTEBOOKS" ]; then source build_tools/travis_notebooks.sh; fi

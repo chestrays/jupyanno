@@ -4,6 +4,7 @@ import json
 import os
 from collections import OrderedDict
 from io import BytesIO
+from typing import Optional, Union, Dict, Callable
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ from IPython.display import display, Javascript
 from PIL import Image
 from six.moves.urllib.parse import urlparse, parse_qs
 
-_IMAGE_READ_PLUGINS = OrderedDict()
+_IMAGE_READ_PLUGINS = OrderedDict()  # type: Dict[str, Callable[[str], np.ndarray]]
 try:
     from pydicom import read_file as read_dicom_image
 
@@ -165,7 +166,7 @@ def path_to_img(in_path):
 
 def load_image_multiformat(in_path, normalize=False,
                            ext=None, as_pil=False):
-    # type: (str) -> np.ndarray
+    # type: (str, bool, Optional[str], bool) -> Union[np.ndarray, Image.Image]
     """
     There are several types of images we might get and thus we need
     a tool which can handle png, png16bit, dicom, jpg, etc
@@ -174,10 +175,12 @@ def load_image_multiformat(in_path, normalize=False,
     :return:
     """
     if ext is None:
-        _, ext = os.path.splitext(in_path)
-    ext = ext.replace('.', '').upper()
+        _, n_ext = os.path.splitext(in_path)
+    else:
+        n_ext = ext
+    n_ext = n_ext.replace('.', '').upper()
     for c_ext, c_func in _IMAGE_READ_PLUGINS.items():
-        if (ext == c_ext) or (c_ext == ''):
+        if (c_ext == n_ext) or (c_ext == ''):
             img_data = c_func(in_path)
             break
     if as_pil:
