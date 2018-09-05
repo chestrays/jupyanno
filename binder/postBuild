@@ -6,4 +6,4 @@ jupyter nbextension enable --py --user fileupload
 
 python setup.py develop
 
-cd sample_data; wget -O low_res.zip 'https://www.dropbox.com/s/n1b5ppya3w59qj2/high_res_xcr.zip?dl=0'; unzip -q low_res.zip; cd ..
+cd sample_data; wget -O low_res.zip 'https://www.dropbox.com/s/ubg9fdknmjdgah0/high_res_pneu.zip?dl=1'; unzip -q low_res.zip; cd ..
