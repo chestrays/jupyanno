@@ -154,7 +154,7 @@ def path_to_img(in_path):
     :param in_path: path to load
     :return: img html tag
     """
-    c_img_data = Image.open(in_path)
+    c_img_data = load_image_multiformat(in_path, as_pil=True)
     c_img_data = c_img_data.convert('RGB')
     out_img_data = BytesIO()
     c_img_data.save(out_img_data, format='png')
