@@ -1,22 +1,31 @@
 import json
 import os
 import time
+from itertools import product
 from tempfile import mkdtemp
 
 import numpy as np
 import pandas as pd
+import pytest
 from PIL import Image
-
 from jupyanno import widgets
 from jupyanno.task import TaskData
+from difflib import SequenceMatcher
+
+test_path = 'tests'
 
 
-def prep_test_task():
+def prep_test_image():
     my_temp_dir = mkdtemp()
     my_temp_img = 'A.png'
     Image.fromarray(np.eye(3, dtype=np.uint8)).save(
         os.path.join(my_temp_dir, my_temp_img)
     )
+    return my_temp_dir, my_temp_img
+
+
+def prep_test_task():
+    my_temp_dir, my_temp_img = prep_test_image()
 
     test_data_df = pd.DataFrame({'MyLabel': ['A'],
                                  'MyImageKey': [my_temp_img]
@@ -81,3 +90,31 @@ def test_binaryclasstask():
     time.sleep(0.5)
     view_info = json.loads(bct.get_viewing_info())
     assert view_info['viewing_time'] > 0.5, 'Viewing time should be longer'
+
+def seq_sim(a,b):
+    return SequenceMatcher(None, a, b).ratio()
+
+@pytest.mark.parametrize("im_widget_cls, im_path",
+                         product([widgets.SimpleImageViewer,
+                                  widgets.PlotlyImageViewer],
+                                 [os.path.join(test_path, 'test_png.png'),
+                                  os.path.join(test_path, 'test_lung_ct.dcm')])
+                         )
+def test_image_widgets(im_widget_cls, im_path):
+    im_widget = im_widget_cls()
+    im_widget.clear_image()
+    widget_pre_image = str(im_widget.get_widget())
+    im_widget.load_image_path(im_path)
+    view_info = json.loads(im_widget.get_viewing_info())
+    assert view_info['viewing_time'] < 0.5, 'Viewing time should be short'
+    widget_with_image = str(im_widget.get_widget())
+    im_widget.clear_image()
+    widget_sans_image = str(im_widget.get_widget())
+
+
+    assert seq_sim(widget_with_image,
+                   widget_sans_image) > 0.5, 'Before and after should be similar'
+    assert seq_sim(widget_with_image,
+                   widget_sans_image) < 0.95, 'Before and after but not too much'
+    assert seq_sim(widget_pre_image,
+                   widget_sans_image) > 0.95, 'Pre and clear should be similarer'

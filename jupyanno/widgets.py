@@ -12,7 +12,8 @@ import ipywidgets as ipw
 import numpy as np
 import plotly.graph_objs as go
 from IPython.display import display
-from PIL import Image, ImageEnhance as ie
+from PIL import ImageEnhance as ie
+from .utils import load_image_multiformat
 
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
@@ -55,7 +56,7 @@ class SimpleImageViewer(WidgetObject):
         self.cur_image_view.value = LOAD_ANIMATION
 
     def load_image_path(self, path):
-        c_img = Image.open(path)
+        c_img = load_image_multiformat(path, as_pil=True)
         bio_obj = BytesIO()
         c_img.save(bio_obj, format='png')
         bio_obj.seek(0)
@@ -201,7 +202,7 @@ class PlotlyImageViewer(WidgetObject):
 
     def load_image_path(self, in_path, **kwargs):
         self.clear_image()
-        self._raw_img = Image.open(in_path)
+        self._raw_img = load_image_multiformat(in_path, as_pil=True)
         title = ''
         title_args = kwargs.copy()
         min_args = ['View Position', 'Patient Age', 'Patient Gender']
