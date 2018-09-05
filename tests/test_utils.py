@@ -47,7 +47,6 @@ def test_dcm_loader():
     assert out_pil.mode == 'RGB', 'Mode is correct'
 
 
-
 def test_png_loader():
     img_dir = mkdtemp()
     im_obj = Image.fromarray(np.eye(3, dtype=np.uint8))

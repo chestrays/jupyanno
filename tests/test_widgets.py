@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from difflib import SequenceMatcher
 from itertools import product
 from tempfile import mkdtemp
 
@@ -10,7 +11,6 @@ import pytest
 from PIL import Image
 from jupyanno import widgets
 from jupyanno.task import TaskData
-from difflib import SequenceMatcher
 
 test_path = 'tests'
 
@@ -91,8 +91,10 @@ def test_binaryclasstask():
     view_info = json.loads(bct.get_viewing_info())
     assert view_info['viewing_time'] > 0.5, 'Viewing time should be longer'
 
-def seq_sim(a,b):
+
+def seq_sim(a, b):
     return SequenceMatcher(None, a, b).ratio()
+
 
 @pytest.mark.parametrize("im_widget_cls, im_path",
                          product([widgets.SimpleImageViewer,
@@ -110,7 +112,6 @@ def test_image_widgets(im_widget_cls, im_path):
     widget_with_image = str(im_widget.get_widget())
     im_widget.clear_image()
     widget_sans_image = str(im_widget.get_widget())
-
 
     assert seq_sim(widget_with_image,
                    widget_sans_image) > 0.5, 'Before and after should be similar'

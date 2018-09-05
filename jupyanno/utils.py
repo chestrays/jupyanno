@@ -181,11 +181,11 @@ def load_image_multiformat(in_path, normalize=False,
             img_data = c_func(in_path)
             break
     if as_pil:
-        normalize=True
+        normalize = True
 
     if normalize:
-        img_data = (img_data.astype(np.float32) - np.mean(img_data)) / (
-                    1 * np.std(img_data))
+        img_data = img_data.astype(np.float32)
+        img_data = (img_data - np.mean(img_data)) / np.std(img_data)
         img_data = np.clip(127 * (img_data + 1), 0, 255).astype(np.uint8)
 
     if as_pil:
