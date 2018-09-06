@@ -28,7 +28,9 @@ def prep_test_task():
     my_temp_dir, my_temp_img = prep_test_image()
 
     test_data_df = pd.DataFrame({'MyLabel': ['A'],
-                                 'MyImageKey': [my_temp_img]
+                                 'MyImageKey': [my_temp_img],
+                                 # this key needs to be manually removed
+                                 'path': ['JunkPathArg']
                                  })
 
     test_task_data = TaskData(
@@ -43,7 +45,9 @@ def prep_test_task():
     return test_task_data, my_temp_img
 
 
-def test_binaryclasstask():
+@pytest.mark.parametrize("image_panel_type",
+                         widgets.IMAGE_VIEWERS.keys())
+def test_binaryclasstask(image_panel_type):
     c_task, image_id = prep_test_task()
     global has_been_submitted
 
@@ -58,6 +62,7 @@ def test_binaryclasstask():
         bct = widgets.BinaryClassTask(['Ja', 'Nein'],
                                       task_data=c_task,
                                       unknown_option=None,
+                                      image_panel_type=image_panel_type,
                                       seed=2018,
                                       prefix='Tests are annoying!')
         widget_code = str(bct.get_widget())
@@ -65,9 +70,10 @@ def test_binaryclasstask():
         assert 'IntProgress(value=0' in widget_code, 'Initial progress is 0'
 
         view_info = json.loads(bct.get_viewing_info())
-        assert len(view_info['zoom']) == 1, 'One zoom event'
-        assert view_info['zoom'][0]['x'] is None, 'X zoom should be empty'
-        assert view_info['zoom'][0]['y'] == [0, 3.0], 'Y should be set'
+        if image_panel_type == 'PlotlyImageViewer':
+            assert len(view_info['zoom']) == 1, 'One zoom event'
+            assert view_info['zoom'][0]['x'] is None, 'X zoom should be empty'
+            assert view_info['zoom'][0]['y'] == [0, 3.0], 'Y should be set'
 
         has_been_submitted = False
         bct.on_submit(dummy_submit_func)
@@ -96,9 +102,9 @@ def seq_sim(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize("im_widget_cls, im_path",
-                         product([widgets.SimpleImageViewer,
-                                  widgets.PlotlyImageViewer],
+                         product(widgets.IMAGE_VIEWERS.values(),
                                  [os.path.join(test_path, 'test_png.png'),
                                   os.path.join(test_path, 'test_lung_ct.dcm')])
                          )
@@ -114,8 +120,19 @@ def test_image_widgets(im_widget_cls, im_path):
     widget_sans_image = str(im_widget.get_widget())
 
     assert seq_sim(widget_with_image,
-                   widget_sans_image) > 0.5, 'Before and after should be similar'
+                   widget_sans_image) > 0, 'Before and after should be similar'
     assert seq_sim(widget_with_image,
                    widget_sans_image) < 0.95, 'Before and after but not too much'
     assert seq_sim(widget_pre_image,
                    widget_sans_image) > 0.95, 'Pre and clear should be similarer'
+
+
+def test_cornerstone_widget():
+    """
+    Make sure it complains if we have a color image
+    :return:
+    """
+    cs_widget = widgets.SimpleCornerstoneViewer()
+    img_path = os.path.join(test_path, 'test_png.png')
+    with pytest.warns(UserWarning):
+        cs_widget.load_image_path(img_path)

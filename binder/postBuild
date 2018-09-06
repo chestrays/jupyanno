@@ -4,6 +4,9 @@ jupyter serverextension enable --py nbserverproxy
 jupyter nbextension install --py --user fileupload
 jupyter nbextension enable --py --user fileupload
 
+jupyter nbextension install --py --symlink --sys-prefix cornerstone_widget
+jupyter nbextension enable --py --sys-prefix cornerstone_widget
+
 python setup.py develop
 
 cd sample_data; wget -O low_res.zip 'https://www.dropbox.com/s/ubg9fdknmjdgah0/high_res_pneu.zip?dl=1'; unzip -q low_res.zip; cd ..
