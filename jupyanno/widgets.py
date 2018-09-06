@@ -108,7 +108,7 @@ class SimpleCornerstoneViewer(WidgetObject):
         self.loaded_time = time()
 
     def get_viewing_info(self):
-        out_info = {}
+        out_info = self.cur_image_view.get_state()
         if self.loaded_time is not None:
             out_info['viewing_time'] = time() - self.loaded_time
         return json.dumps(out_info)

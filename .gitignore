@@ -85,3 +85,4 @@ venv.bak/
 .mypy_cache/
 .Rproj.user
 .idea/
+*.dcm
