@@ -87,18 +87,30 @@ class SimpleCornerstoneViewer(WidgetObject):
         layout = ipw.Layout(width=width)
         self.cur_image_view = CornerstoneWidget(layout=layout)
         self.loaded_time = None
-        super().__init__(self.cur_image_view)
-        self.clear_image()
+        self._image_data = np.zeros((3, 3))
+
+        self._toolbar = [ipw.Button(description="Refresh", icon="undo")]
+        self._toolbar[0].on_click(lambda *args, **kwargs: self.update_display())
+        panel = ipw.VBox([ipw.HBox(self._toolbar),
+                          self.cur_image_view
+                          ])
+        super().__init__(panel)
 
     def clear_image(self):
-        self.cur_image_view.update_image(np.zeros((1, 1)))
+        self._image_data = np.eye(3)
+        self.update_display()
 
     def load_image_path(self, path, **kwargs):
-        c_img = load_image_multiformat(path, normalize=False)
-        if len(c_img.shape) == 3:
+        self.clear_image()
+        self._image_data = load_image_multiformat(path, normalize=False)
+        if len(self._image_data.shape) == 3:
             warnings.warn('Color images not fully supported', UserWarning)
-            c_img = c_img[:, :, 0]
-        self.cur_image_view.update_image(c_img)
+            self._image_data = self._image_data[:, :, 0]
+        self.update_display()
+
+    def update_display(self):
+        self.cur_image_view.update_image(np.zeros((3, 3)))
+        self.cur_image_view.update_image(self._image_data)
         self.loaded_time = time()
 
     def get_viewing_info(self):
@@ -236,9 +248,9 @@ class PlotlyImageViewer(WidgetObject):
             # get ride of the annoying popup in the corners
             self._g.layout.hovermode = False
 
-    def load_image_path(self, in_path, **kwargs):
+    def load_image_path(self, path, **kwargs):
         self.clear_image()
-        self._raw_img = load_image_multiformat(in_path, as_pil=True)
+        self._raw_img = load_image_multiformat(path, as_pil=True)
         title = ''
         title_args = kwargs.copy()
         min_args = ['View Position', 'Patient Age', 'Patient Gender']
@@ -420,6 +432,9 @@ class AbstractClassificationTask(WidgetObject):
     def _update_image(self, image_key):
         # update image
         img_path, img_kwargs = self._image_dict[image_key]
+        if 'path' in img_kwargs:
+            img_kwargs.pop('path')
+
         self.task_widget.load_image_path(img_path, **img_kwargs)
         self.current_image_id = image_key
 

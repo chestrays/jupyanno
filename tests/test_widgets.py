@@ -28,7 +28,9 @@ def prep_test_task():
     my_temp_dir, my_temp_img = prep_test_image()
 
     test_data_df = pd.DataFrame({'MyLabel': ['A'],
-                                 'MyImageKey': [my_temp_img]
+                                 'MyImageKey': [my_temp_img],
+                                 # this key needs to be manually removed
+                                 'path': ['JunkPathArg']
                                  })
 
     test_task_data = TaskData(
