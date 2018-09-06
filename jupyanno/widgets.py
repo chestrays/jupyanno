@@ -14,7 +14,7 @@ import numpy as np
 import plotly.graph_objs as go
 from IPython.display import display
 from PIL import ImageEnhance as ie
-from cornerstone_widget import CornerstoneWidget
+from cornerstone_widget import CornerstoneToolbarWidget
 
 from .utils import load_image_multiformat
 
@@ -83,18 +83,12 @@ class SimpleCornerstoneViewer(WidgetObject):
     '{}'
     """
 
-    def __init__(self, width=VIEWER_WIDTH, **kwargs):
-        layout = ipw.Layout(width=width)
-        self.cur_image_view = CornerstoneWidget(layout=layout)
+    def __init__(self, **kwargs):
+        self.cur_image_view = CornerstoneToolbarWidget()
         self.loaded_time = None
         self._image_data = np.zeros((3, 3))
 
-        self._toolbar = [ipw.Button(description="Refresh", icon="undo")]
-        self._toolbar[0].on_click(lambda *args, **kwargs: self.update_display())
-        panel = ipw.VBox([ipw.HBox(self._toolbar),
-                          self.cur_image_view
-                          ])
-        super().__init__(panel)
+        super().__init__(self.cur_image_view.get_widget())
 
     def clear_image(self):
         self._image_data = np.eye(3)
