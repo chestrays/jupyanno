@@ -120,7 +120,7 @@ def test_image_widgets(im_widget_cls, im_path):
     widget_sans_image = str(im_widget.get_widget())
 
     assert seq_sim(widget_with_image,
-                   widget_sans_image) > 0, 'Before and after should be similar'
+                   widget_sans_image) > 0.001, 'Before and after should be similar'
     assert seq_sim(widget_with_image,
                    widget_sans_image) < 0.95, 'Before and after but not too much'
     assert seq_sim(widget_pre_image,
