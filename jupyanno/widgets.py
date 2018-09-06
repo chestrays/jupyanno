@@ -4,6 +4,7 @@ and multiple choice options)"""
 import base64
 import json
 import os
+import warnings
 from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
@@ -13,6 +14,8 @@ import numpy as np
 import plotly.graph_objs as go
 from IPython.display import display
 from PIL import ImageEnhance as ie
+from cornerstone_widget import CornerstoneWidget
+
 from .utils import load_image_multiformat
 
 MultipleChoiceAnswer = namedtuple(
@@ -45,8 +48,8 @@ class WidgetObject:
 
 
 class SimpleImageViewer(WidgetObject):
-    def __init__(self):
-        self.cur_image_view = ipw.Image(layout=ipw.Layout(width=VIEWER_WIDTH),
+    def __init__(self, width=VIEWER_WIDTH, **kwargs):
+        self.cur_image_view = ipw.Image(layout=ipw.Layout(width=width),
                                         disabled=True)
         self.loaded_time = None
         super().__init__(self.cur_image_view)
@@ -55,7 +58,7 @@ class SimpleImageViewer(WidgetObject):
         self.cur_image_view.format = 'gif'
         self.cur_image_view.value = LOAD_ANIMATION
 
-    def load_image_path(self, path):
+    def load_image_path(self, path, **kwargs):
         c_img = load_image_multiformat(path, as_pil=True)
         bio_obj = BytesIO()
         c_img.save(bio_obj, format='png')
@@ -63,6 +66,39 @@ class SimpleImageViewer(WidgetObject):
         self.cur_image_view.format = 'png'
         self.cur_image_view.value = bio_obj.read()
 
+        self.loaded_time = time()
+
+    def get_viewing_info(self):
+        out_info = {}
+        if self.loaded_time is not None:
+            out_info['viewing_time'] = time() - self.loaded_time
+        return json.dumps(out_info)
+
+
+class SimpleCornerstoneViewer(WidgetObject):
+    """
+    A cornerstone-based image viewer
+    >>> h = SimpleCornerstoneViewer()
+    >>> h.get_viewing_info()
+    '{}'
+    """
+
+    def __init__(self, width=VIEWER_WIDTH, **kwargs):
+        layout = ipw.Layout(width=width)
+        self.cur_image_view = CornerstoneWidget(layout=layout)
+        self.loaded_time = None
+        super().__init__(self.cur_image_view)
+        self.clear_image()
+
+    def clear_image(self):
+        self.cur_image_view.update_image(np.zeros((1, 1)))
+
+    def load_image_path(self, path, **kwargs):
+        c_img = load_image_multiformat(path, normalize=False)
+        if len(c_img.shape) == 3:
+            warnings.warn('Color images not fully supported', UserWarning)
+            c_img = c_img[:, :, 0]
+        self.cur_image_view.update_image(c_img)
         self.loaded_time = time()
 
     def get_viewing_info(self):
@@ -125,7 +161,7 @@ class PlotlyImageViewer(WidgetObject):
     })), layout=Layout(height='768px', width='600px'))
     """
 
-    def __init__(self, width=VIEWER_WIDTH, with_bc=True):
+    def __init__(self, width=VIEWER_WIDTH, with_bc=True, **kwargs):
         self._g = go.FigureWidget(data=[{
             'x': [0, 1],
             'y': [0, 1],
@@ -243,6 +279,13 @@ class PlotlyImageViewer(WidgetObject):
         return json.dumps(self.out_info)
 
 
+IMAGE_VIEWERS = {
+    'SimpleImageViewer': SimpleImageViewer,
+    'SimpleCornerstoneViewer': SimpleCornerstoneViewer,
+    'PlotlyImageViewer': PlotlyImageViewer
+}
+
+
 class MultipleChoiceQuestion(WidgetObject):
     def __init__(self, question, labels, question_prefix='', width="150px",
                  buttons_per_row=3):
@@ -311,8 +354,8 @@ class AbstractClassificationTask(WidgetObject):
     """
 
     def __init__(self, labels, task_data, seed=None, maximum_count=None,
-                 with_bc=False,
-                 image_panel_width=VIEWER_WIDTH):
+                 image_panel_type='PlotlyImageViewer',
+                 **image_panel_kwargs):
         self.labels = labels
         self._image_dict = {
             c_row[task_data.image_key_col]: (
@@ -325,8 +368,11 @@ class AbstractClassificationTask(WidgetObject):
 
         self.image_keys = sorted(list(self._image_dict.keys()))
         self.submit_event = None
-        self.task_widget = PlotlyImageViewer(with_bc=with_bc,
-                                             width=image_panel_width)
+        c_viewer = IMAGE_VIEWERS.get(image_panel_type)
+        if c_viewer is None:
+            raise ValueError('Widget Type: {} not found'.format(
+                image_panel_type))
+        self.task_widget = c_viewer(**image_panel_kwargs)
         self.answer_widget.on_submit(lambda x: self._local_submit(x))
         self.current_image_id = None
         self.set_seed(seed)
@@ -351,7 +397,7 @@ class AbstractClassificationTask(WidgetObject):
             ipw.HBox([
                 ipw.VBox([self._progress_bar,
                           self.task_widget.get_widget()
-                          ], layout=ipw.Layout(width=image_panel_width)
+                          ]
                          ),
                 self._answer_region
             ])
@@ -410,10 +456,13 @@ class AbstractClassificationTask(WidgetObject):
 
 
 class MultiClassTask(AbstractClassificationTask):
-    def __init__(self, labels, task_data, seed=None, max_count=None):
+    def __init__(self, labels, task_data,
+                 seed=None, max_count=None,
+                 image_panel_type='PlotlyImageViewer', **panel_args):
         self.answer_widget = MultipleChoiceQuestion(
             'Select the most appropriate label for the given image', labels)
-        super().__init__(labels, task_data, seed, max_count)
+        super().__init__(labels, task_data, seed, max_count,
+                         image_panel_type=image_panel_type, **panel_args)
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='MultiClass',
@@ -432,8 +481,15 @@ class BinaryClassTask(AbstractClassificationTask):
     A class for handling binary (or trinary) classification problems
     """
 
-    def __init__(self, labels, task_data, unknown_option, seed=None,
-                 max_count=None, prefix='Does this patient have'):
+    def __init__(self, labels,
+                 task_data,
+                 unknown_option,
+                 image_panel_type='PlotlyImageViewer',
+                 seed=None,
+                 max_count=None,
+                 prefix='Does the statement below accurately describe the image',
+                 **panel_args
+                 ):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
@@ -442,7 +498,8 @@ class BinaryClassTask(AbstractClassificationTask):
                                                     answer_choices,
                                                     question_prefix=prefix,
                                                     buttons_per_row=1)
-        super().__init__(labels, task_data, seed, max_count)
+        super().__init__(labels, task_data, seed, max_count,
+                         image_panel_type=image_panel_type, **panel_args)
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='BinaryClass',
