@@ -27,3 +27,4 @@ dependencies:
     - seaborn==0.7.1
     - cloudpickle
     - fileupload
+    - git+https://github.com/chestrays/cornerstone_widget
