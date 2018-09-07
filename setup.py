@@ -13,6 +13,6 @@ setup(name='jupyanno',
       packages=['jupyanno'],
       install_requires=['numpy', 'pandas', 'notebook', 'ipywidgets'],
       extras_require={
-          'plots': ["matplotlib", "plotly"]
+          'plots': ["matplotlib", "plotly", "cornerstone_widget"]
       }
       )

@@ -4,6 +4,7 @@ and multiple choice options)"""
 import base64
 import json
 import os
+import warnings
 from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
@@ -12,7 +13,10 @@ import ipywidgets as ipw
 import numpy as np
 import plotly.graph_objs as go
 from IPython.display import display
-from PIL import Image, ImageEnhance as ie
+from PIL import ImageEnhance as ie
+from cornerstone_widget import CornerstoneToolbarWidget
+
+from .utils import load_image_multiformat
 
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
@@ -44,8 +48,8 @@ class WidgetObject:
 
 
 class SimpleImageViewer(WidgetObject):
-    def __init__(self):
-        self.cur_image_view = ipw.Image(layout=ipw.Layout(width=VIEWER_WIDTH),
+    def __init__(self, width=VIEWER_WIDTH, **kwargs):
+        self.cur_image_view = ipw.Image(layout=ipw.Layout(width=width),
                                         disabled=True)
         self.loaded_time = None
         super().__init__(self.cur_image_view)
@@ -54,8 +58,8 @@ class SimpleImageViewer(WidgetObject):
         self.cur_image_view.format = 'gif'
         self.cur_image_view.value = LOAD_ANIMATION
 
-    def load_image_path(self, path):
-        c_img = Image.open(path)
+    def load_image_path(self, path, **kwargs):
+        c_img = load_image_multiformat(path, as_pil=True)
         bio_obj = BytesIO()
         c_img.save(bio_obj, format='png')
         bio_obj.seek(0)
@@ -66,6 +70,45 @@ class SimpleImageViewer(WidgetObject):
 
     def get_viewing_info(self):
         out_info = {}
+        if self.loaded_time is not None:
+            out_info['viewing_time'] = time() - self.loaded_time
+        return json.dumps(out_info)
+
+
+class CornerstoneViewer(WidgetObject):
+    """
+    A cornerstone-based image viewer
+    >>> h = CornerstoneViewer()
+    >>> h.get_viewing_info()
+    '{}'
+    """
+
+    def __init__(self, **kwargs):
+        self.cur_image_view = CornerstoneToolbarWidget()
+        self.loaded_time = None
+        self._image_data = np.zeros((3, 3))
+
+        super().__init__(self.cur_image_view.get_widget())
+
+    def clear_image(self):
+        self._image_data = np.eye(3)
+        self.update_display()
+
+    def load_image_path(self, path, **kwargs):
+        self.clear_image()
+        self._image_data = load_image_multiformat(path, normalize=False)
+        if len(self._image_data.shape) == 3:
+            warnings.warn('Color images not fully supported', UserWarning)
+            self._image_data = self._image_data[:, :, 0]
+        self.update_display()
+
+    def update_display(self):
+        self.cur_image_view.update_image(np.zeros((3, 3)))
+        self.cur_image_view.update_image(self._image_data)
+        self.loaded_time = time()
+
+    def get_viewing_info(self):
+        out_info = self.cur_image_view.get_state()
         if self.loaded_time is not None:
             out_info['viewing_time'] = time() - self.loaded_time
         return json.dumps(out_info)
@@ -124,7 +167,7 @@ class PlotlyImageViewer(WidgetObject):
     })), layout=Layout(height='768px', width='600px'))
     """
 
-    def __init__(self, width=VIEWER_WIDTH, with_bc=True):
+    def __init__(self, width=VIEWER_WIDTH, with_bc=True, **kwargs):
         self._g = go.FigureWidget(data=[{
             'x': [0, 1],
             'y': [0, 1],
@@ -199,9 +242,9 @@ class PlotlyImageViewer(WidgetObject):
             # get ride of the annoying popup in the corners
             self._g.layout.hovermode = False
 
-    def load_image_path(self, in_path, **kwargs):
+    def load_image_path(self, path, **kwargs):
         self.clear_image()
-        self._raw_img = Image.open(in_path)
+        self._raw_img = load_image_multiformat(path, as_pil=True)
         title = ''
         title_args = kwargs.copy()
         min_args = ['View Position', 'Patient Age', 'Patient Gender']
@@ -242,9 +285,16 @@ class PlotlyImageViewer(WidgetObject):
         return json.dumps(self.out_info)
 
 
+IMAGE_VIEWERS = {
+    'SimpleImageViewer': SimpleImageViewer,
+    'CornerstoneViewer': CornerstoneViewer,
+    'PlotlyImageViewer': PlotlyImageViewer
+}
+
+
 class MultipleChoiceQuestion(WidgetObject):
     def __init__(self, question, labels, question_prefix='', width="150px",
-                 buttons_per_row=3):
+                 buttons_per_row=1):
         self.question_box = ipw.HTML(value='')
         self.labels = labels
         self.width = width
@@ -267,7 +317,7 @@ class MultipleChoiceQuestion(WidgetObject):
 
     def set_question(self, question):
         self.question = question
-        self.question_box.value = '<h2>{} {}?</h2>'.format(
+        self.question_box.value = '<h2>{} <i>{}</i>?</h2>'.format(
             self.question_prefix, self.question)
         self.disable_buttons(False)
 
@@ -310,8 +360,8 @@ class AbstractClassificationTask(WidgetObject):
     """
 
     def __init__(self, labels, task_data, seed=None, maximum_count=None,
-                 with_bc=False,
-                 image_panel_width=VIEWER_WIDTH):
+                 image_panel_type='PlotlyImageViewer',
+                 **image_panel_kwargs):
         self.labels = labels
         self._image_dict = {
             c_row[task_data.image_key_col]: (
@@ -324,8 +374,11 @@ class AbstractClassificationTask(WidgetObject):
 
         self.image_keys = sorted(list(self._image_dict.keys()))
         self.submit_event = None
-        self.task_widget = PlotlyImageViewer(with_bc=with_bc,
-                                             width=image_panel_width)
+        c_viewer = IMAGE_VIEWERS.get(image_panel_type)
+        if c_viewer is None:
+            raise ValueError('Widget Type: {} not found'.format(
+                image_panel_type))
+        self.task_widget = c_viewer(**image_panel_kwargs)
         self.answer_widget.on_submit(lambda x: self._local_submit(x))
         self.current_image_id = None
         self.set_seed(seed)
@@ -350,7 +403,7 @@ class AbstractClassificationTask(WidgetObject):
             ipw.HBox([
                 ipw.VBox([self._progress_bar,
                           self.task_widget.get_widget()
-                          ], layout=ipw.Layout(width=image_panel_width)
+                          ]
                          ),
                 self._answer_region
             ])
@@ -373,6 +426,9 @@ class AbstractClassificationTask(WidgetObject):
     def _update_image(self, image_key):
         # update image
         img_path, img_kwargs = self._image_dict[image_key]
+        if 'path' in img_kwargs:
+            img_kwargs.pop('path')
+
         self.task_widget.load_image_path(img_path, **img_kwargs)
         self.current_image_id = image_key
 
@@ -409,10 +465,13 @@ class AbstractClassificationTask(WidgetObject):
 
 
 class MultiClassTask(AbstractClassificationTask):
-    def __init__(self, labels, task_data, seed=None, max_count=None):
+    def __init__(self, labels, task_data,
+                 seed=None, max_count=None,
+                 image_panel_type='PlotlyImageViewer', **panel_args):
         self.answer_widget = MultipleChoiceQuestion(
             'Select the most appropriate label for the given image', labels)
-        super().__init__(labels, task_data, seed, max_count)
+        super().__init__(labels, task_data, seed, max_count,
+                         image_panel_type=image_panel_type, **panel_args)
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='MultiClass',
@@ -429,20 +488,27 @@ class MultiClassTask(AbstractClassificationTask):
 class BinaryClassTask(AbstractClassificationTask):
     """
     A class for handling binary (or trinary) classification problems
-    bct = BinaryClassTask(['A', 'B'], task_data=None, unknown_option=None)
     """
 
-    def __init__(self, labels, task_data, unknown_option, seed=None,
-                 max_count=None):
+    def __init__(self, labels,
+                 task_data,
+                 unknown_option,
+                 image_panel_type='PlotlyImageViewer',
+                 seed=None,
+                 max_count=None,
+                 prefix='Does the following text accurately describe the image:',
+                 **panel_args
+                 ):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
-        prefix = 'Does this patient have'
+
         self.answer_widget = MultipleChoiceQuestion('',
                                                     answer_choices,
                                                     question_prefix=prefix,
                                                     buttons_per_row=1)
-        super().__init__(labels, task_data, seed, max_count)
+        super().__init__(labels, task_data, seed, max_count,
+                         image_panel_type=image_panel_type, **panel_args)
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='BinaryClass',

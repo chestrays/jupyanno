@@ -1,8 +1,10 @@
 import base64
-import base64 as b64
 import inspect
 import json
+import os
+from collections import OrderedDict
 from io import BytesIO
+from typing import Optional, Union, Dict, Callable
 
 import numpy as np
 import pandas as pd
@@ -10,6 +12,24 @@ import seaborn as sns
 from IPython.display import display, Javascript
 from PIL import Image
 from six.moves.urllib.parse import urlparse, parse_qs
+
+_IMAGE_READ_PLUGINS = OrderedDict()  # type: Dict[str, Callable[[str], np.ndarray]]
+try:
+    from pydicom import read_file as read_dicom_image
+
+    _IMAGE_READ_PLUGINS['DCM'] = lambda x: read_dicom_image(x).pixel_array
+except ImportError as e:
+    # silently fail
+    pass
+
+try:
+    from skimage.io import imread
+
+    _IMAGE_READ_PLUGINS['PNG'] = imread
+except ImportError as e:
+    pass
+
+_IMAGE_READ_PLUGINS[''] = lambda x: np.array(Image.open(x))
 
 
 def setup_appmode():
@@ -129,7 +149,12 @@ def raw_html_render(temp_df):
 
 
 def path_to_img(in_path):
-    c_img_data = Image.open(in_path)
+    """
+    Open an image as return a URL
+    :param in_path: path to load
+    :return: img html tag
+    """
+    c_img_data = load_image_multiformat(in_path, as_pil=True)
     c_img_data = c_img_data.convert('RGB')
     out_img_data = BytesIO()
     c_img_data.save(out_img_data, format='png')
@@ -137,6 +162,40 @@ def path_to_img(in_path):
     uri = _wrap_uri(base64.b64encode(out_img_data.read()
                                      ).decode("ascii").replace("\n", ""))
     return '<img src="{uri}"/>'.format(uri=uri)
+
+
+def load_image_multiformat(in_path, normalize=False,
+                           ext=None, as_pil=False):
+    # type: (str, bool, Optional[str], bool) -> Union[np.ndarray, Image.Image]
+    """
+    There are several types of images we might get and thus we need
+    a tool which can handle png, png16bit, dicom, jpg, etc
+    :param in_path:
+    :param normalize: whether or not to renormalize the image
+    :return:
+    """
+    if ext is None:
+        _, n_ext = os.path.splitext(in_path)
+    else:
+        n_ext = ext
+    n_ext = n_ext.replace('.', '').upper()
+    for c_ext, c_func in _IMAGE_READ_PLUGINS.items():
+        if (c_ext == n_ext) or (c_ext == ''):
+            img_data = c_func(in_path)
+            break
+    if as_pil:
+        normalize = True
+
+    if normalize:
+        img_data = img_data.astype(np.float32)
+        img_data = (img_data - np.mean(img_data)) / np.std(img_data)
+        img_data = np.clip(127 * (img_data + 1), 0, 255).astype(np.uint8)
+
+    if as_pil:
+        out_img = Image.fromarray(img_data)
+        return out_img.convert('RGB')
+    else:
+        return img_data
 
 
 def fancy_format(in_str, **kwargs):
@@ -163,4 +222,4 @@ def encode_numpy_b64(in_img):
     >>> encode_numpy_b64(np.eye(2))
     'AAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8='
     """
-    return b64.b64encode(in_img.tobytes()).decode()
+    return base64.b64encode(in_img.tobytes()).decode()
