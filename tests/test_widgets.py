@@ -132,7 +132,7 @@ def test_cornerstone_widget():
     Make sure it complains if we have a color image
     :return:
     """
-    cs_widget = widgets.SimpleCornerstoneViewer()
+    cs_widget = widgets.CornerstoneViewer()
     img_path = os.path.join(test_path, 'test_png.png')
     with pytest.warns(UserWarning):
         cs_widget.load_image_path(img_path)

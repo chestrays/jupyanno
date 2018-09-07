@@ -75,10 +75,10 @@ class SimpleImageViewer(WidgetObject):
         return json.dumps(out_info)
 
 
-class SimpleCornerstoneViewer(WidgetObject):
+class CornerstoneViewer(WidgetObject):
     """
     A cornerstone-based image viewer
-    >>> h = SimpleCornerstoneViewer()
+    >>> h = CornerstoneViewer()
     >>> h.get_viewing_info()
     '{}'
     """
@@ -287,14 +287,14 @@ class PlotlyImageViewer(WidgetObject):
 
 IMAGE_VIEWERS = {
     'SimpleImageViewer': SimpleImageViewer,
-    'SimpleCornerstoneViewer': SimpleCornerstoneViewer,
+    'CornerstoneViewer': CornerstoneViewer,
     'PlotlyImageViewer': PlotlyImageViewer
 }
 
 
 class MultipleChoiceQuestion(WidgetObject):
     def __init__(self, question, labels, question_prefix='', width="150px",
-                 buttons_per_row=3):
+                 buttons_per_row=1):
         self.question_box = ipw.HTML(value='')
         self.labels = labels
         self.width = width
@@ -317,7 +317,7 @@ class MultipleChoiceQuestion(WidgetObject):
 
     def set_question(self, question):
         self.question = question
-        self.question_box.value = '<h2>{} {}?</h2>'.format(
+        self.question_box.value = '<h2>{} <i>{}</i>?</h2>'.format(
             self.question_prefix, self.question)
         self.disable_buttons(False)
 
@@ -496,7 +496,7 @@ class BinaryClassTask(AbstractClassificationTask):
                  image_panel_type='PlotlyImageViewer',
                  seed=None,
                  max_count=None,
-                 prefix='Does the statement below accurately describe the image',
+                 prefix='Does the following text accurately describe the image:',
                  **panel_args
                  ):
         answer_choices = ['Yes', 'No']
