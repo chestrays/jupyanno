@@ -12,7 +12,7 @@ setup(name='jupyanno',
       author='ChestRays Team',
       packages=['jupyanno'],
       install_requires=['numpy', 'pandas', 'notebook', 'ipywidgets', 'seaborn',
-                        'pillow', 'beautifulsoup4'],
+                        'pillow', 'beautifulsoup4', 'pydicom'],
       extras_require={
           'plots': ["matplotlib", "plotly", "cornerstone_widget"]
       }
