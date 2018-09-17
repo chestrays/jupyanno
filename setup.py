@@ -11,7 +11,7 @@ setup(name='jupyanno',
       license='Apache',
       author='ChestRays Team',
       packages=['jupyanno'],
-      install_requires=['numpy', 'pandas', 'notebook', 'ipywidgets'],
+      install_requires=['numpy', 'pandas', 'notebook', 'ipywidgets', 'seaborn'],
       extras_require={
           'plots': ["matplotlib", "plotly", "cornerstone_widget"]
       }
