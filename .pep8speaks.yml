@@ -1,0 +1,5 @@
+message:
+  opened:
+    header: "Thank you for submitting the Pull Request!"
+  updated:
+    header: "Thank you for updating your Pull Request!"
