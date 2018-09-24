@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from PIL import Image
+from ipywidgets.embed import embed_snippet
 from jupyanno import widgets
 from jupyanno.task import TaskData
 
@@ -136,3 +137,33 @@ def test_cornerstone_widget():
     img_path = os.path.join(test_path, 'test_png.png')
     with pytest.warns(UserWarning):
         cs_widget.load_image_path(img_path)
+
+
+def _embed(wid):
+    return embed_snippet(wid.get_widget())
+
+
+REAL_IMAGE_BHEX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAg'
+
+
+def test_plotly_widget():
+    pl_nobc_widget = widgets.PlotlyImageViewer(with_bc=False)
+    nobc_html = _embed(pl_nobc_widget)
+    # assert 'Brightness:' not in nobc_html
+    pl_widget = widgets.PlotlyImageViewer(with_bc=True)
+    empty_html = _embed(pl_widget)
+    assert 'Brightness:' in empty_html
+    assert len(empty_html) > len(nobc_html)
+    empty_state = pl_widget._g.get_state()
+    assert 'images' not in empty_state['_layout'], "Should have no images"
+
+    assert REAL_IMAGE_BHEX not in empty_html, 'No Image'
+    img_path = os.path.join(test_path, 'test_png.png')
+    pl_widget.load_image_path(img_path)
+    loaded_state = pl_widget._g.get_state()
+    assert len(loaded_state['_layout']['images']) == 1
+    loaded_html = _embed(pl_widget)
+
+    assert REAL_IMAGE_BHEX in loaded_html, 'Should have image'
+    assert len(loaded_html) - len(
+        empty_html) > 100000, 'code should be much bigger'

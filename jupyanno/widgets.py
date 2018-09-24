@@ -139,33 +139,13 @@ def _wrap_image_dict(c_img):
 class PlotlyImageViewer(WidgetObject):
     """
     A plotly-based image viewer allowing zoom, pan and overlays
-    >>> h = PlotlyImageViewer(with_bc=True).get_widget()
-    >>> h.children[-1].data[0]['uid']=0
-    >>> print(h)
-    VBox(children=(HBox(children=(FloatSlider(value=1.0, continuous_update=False, description='Brightness:', max=3.5), FloatSlider(value=1.0, continuous_update=False, description='Contrast:', max=3.5))), Label(value='Loading...'), FigureWidget({
-        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
-        'layout': {'dragmode': 'zoom',
-                   'hovermode': False,
-                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
-                   'title': 'Loading...',
-                   'xaxis': {'visible': False},
-                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
-    })), layout=Layout(height='768px', width='600px'))
-    >>> h = PlotlyImageViewer(with_bc=False).get_widget()
-    >>> h.children[-1].data[0]['uid']=0
-    >>> print(h)
-    VBox(children=(Label(value='Loading...'), FigureWidget({
-        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
-        'layout': {'dragmode': 'zoom',
-                   'hovermode': False,
-                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
-                   'title': 'Loading...',
-                   'xaxis': {'visible': False},
-                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
-    })), layout=Layout(height='768px', width='600px'))
+    :param width: the width of the widget
+    :param with_bc: show brightness and contrast sliders
+    :param kwargs: additional arguments to ignore
     """
 
     def __init__(self, width=VIEWER_WIDTH, with_bc=True, **kwargs):
+
         self._g = go.FigureWidget(data=[{
             'x': [0, 1],
             'y': [0, 1],
