@@ -1,7 +1,6 @@
 """The widgets are the heart of jupyanno package and bring together
 tasks as task panels (with images) and answer panels (with buttons
 and multiple choice options)"""
-import base64
 import json
 import os
 import warnings
@@ -16,7 +15,7 @@ from IPython.display import display
 from PIL import ImageEnhance as ie
 from cornerstone_widget import CornerstoneToolbarWidget
 
-from .utils import load_image_multiformat
+from .utils import load_image_multiformat, image_to_png_uri
 
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
@@ -78,13 +77,21 @@ class SimpleImageViewer(WidgetObject):
 class CornerstoneViewer(WidgetObject):
     """
     A cornerstone-based image viewer
+    :param tools: list of names of tools (from TOOLS dict)
+    :param show_reset: show the reset button
     >>> h = CornerstoneViewer()
     >>> h.get_viewing_info()
     '{}'
     """
 
-    def __init__(self, **kwargs):
-        self.cur_image_view = CornerstoneToolbarWidget()
+    def __init__(self, tools=None, show_reset=False, **kwargs):
+        ct_kwargs = {}
+
+        if tools is not None:
+            ct_kwargs = {'tools': tools}
+
+        self.cur_image_view = CornerstoneToolbarWidget(show_reset=show_reset,
+                                                       **ct_kwargs)
         self.loaded_time = None
         self._image_data = np.zeros((3, 3))
 
@@ -114,17 +121,8 @@ class CornerstoneViewer(WidgetObject):
         return json.dumps(out_info)
 
 
-def wrap_bytes_as_uri(in_byte_obj):
-    b64_str = base64.b64encode(in_byte_obj.read()).decode(
-        "ascii").replace("\n", "")
-    return "data:image/png;base64,{0}".format(b64_str)
-
-
-def image_dict(c_img):
-    bio_obj = BytesIO()
-    c_img.save(bio_obj, format='png')
-    bio_obj.seek(0)
-    nice_uri = wrap_bytes_as_uri(bio_obj)
+def _wrap_image_dict(c_img):
+    nice_uri = image_to_png_uri(c_img)
     return dict(source=nice_uri,
                 x=0,
                 sizex=c_img.width,
@@ -260,7 +258,7 @@ class PlotlyImageViewer(WidgetObject):
         if self._raw_img is not None:
             cont_img = ie.Contrast(self._raw_img).enhance(self._contrast.value)
             proc_img = ie.Brightness(cont_img).enhance(self._brightness.value)
-            img_dict = image_dict(proc_img)
+            img_dict = _wrap_image_dict(proc_img)
             if refresh_view:
                 with self._g.batch_update():
                     self._g.data[0].x = [0,
