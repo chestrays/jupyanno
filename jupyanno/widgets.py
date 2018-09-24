@@ -7,7 +7,7 @@ import warnings
 from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
-from typing import Union, Optional, Dict
+from typing import Optional, Dict
 
 import ipywidgets as ipw
 import numpy as np
@@ -272,10 +272,13 @@ IMAGE_VIEWERS = {
 
 
 class MultipleChoiceQuestion(WidgetObject):
+    DEFAULT_PREFIX = 'Does the following text accurately describe the image:'
+    DEFAULT_QUESTION = '%s: {}?' % (DEFAULT_PREFIX)
+
     def __init__(self,
                  question,
                  labels,
-                 question_template='',  # type: Union[str, Dict[str, str]]
+                 question_template=None,  # type: Optional[Dict[str, str]]
                  width="150px",
                  buttons_per_row=1):
         # type: (...) -> None
@@ -284,8 +287,10 @@ class MultipleChoiceQuestion(WidgetObject):
         self.width = width
         self.buttons_per_row = buttons_per_row
         self._make_buttons(labels)
-
-        self.question_template = question_template
+        if question_template is not None:
+            self.question_template = question_template
+        else:
+            self.question_template = {}
         self.set_question(question)
 
         self.submit_func = None
@@ -301,12 +306,10 @@ class MultipleChoiceQuestion(WidgetObject):
 
     def set_question(self, question):
         self.question = question
-        if isinstance(self.question_template, str):
-            q_html = '<h2>{} <i>{}</i>?</h2>'.format(
-                self.question_template, self.question)
-        elif isinstance(self.question_template, dict):
-            q_test = self.question_template.get(question, '')
-            q_html = '<h2>{}</h2>'.format(q_test)
+        q_test = self.question_template.get(question)
+        if q_test is None:
+            q_test = self.DEFAULT_QUESTION.format(question)
+        q_html = '<h2>{}</h2>'.format(q_test)
         self.question_box.value = q_html
         self.disable_buttons(False)
 
@@ -490,7 +493,6 @@ class BinaryClassTask(AbstractClassificationTask):
     """
     A class for handling binary (or trinary) classification problems
     """
-    DEFAULT_QUESTION = 'Does the following text accurately describe the image:'
 
     def __init__(self, labels,
                  task_data,
@@ -505,14 +507,10 @@ class BinaryClassTask(AbstractClassificationTask):
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
-        if question_dict is None:
-            question_template = self.DEFAULT_QUESTION
-        else:
-            question_template = question_dict
 
         self._answer_widget = MultipleChoiceQuestion('',
                                                      answer_choices,
-                                                     question_template=question_template,
+                                                     question_template=question_dict,
                                                      buttons_per_row=1)
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)

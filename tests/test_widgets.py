@@ -12,7 +12,6 @@ from PIL import Image
 from ipywidgets.embed import embed_snippet
 from jupyanno import widgets
 from jupyanno.task import TaskData
-from collections import defaultdict
 
 test_path = 'tests'
 
@@ -61,15 +60,16 @@ def test_binaryclasstask(image_panel_type):
 
     for i in range(5):
         # make sure results are reproducible by running multiple times
-        q_dict = {'Ja': 'Hai!', 'Nein': 'iie!'}
+        q_dict = {'Nein': 'iie!'}
         bct = widgets.BinaryClassTask(['Ja', 'Nein'],
                                       task_data=c_task,
                                       unknown_option=None,
                                       image_panel_type=image_panel_type,
-                                      seed=2018,
+                                      seed=0,
                                       question_dict=q_dict)
         widget_code = str(bct.get_widget())
-        assert 'Hai!' in widget_code, 'Question should be inside'
+        assert widgets.MultipleChoiceQuestion.DEFAULT_PREFIX in widget_code, 'Default Question should be inside'
+        assert 'iie!' not in widget_code, 'Question should not be inside'
         assert 'IntProgress(value=0' in widget_code, 'Initial progress is 0'
 
         view_info = json.loads(bct.get_viewing_info())
@@ -92,10 +92,12 @@ def test_binaryclasstask(image_panel_type):
 
         view_info = json.loads(bct.get_viewing_info())
         assert view_info['viewing_time'] < 0.5, 'Viewing time should be short'
-        assert bct.get_answer_widget().question == 'Ja', 'Question should be Ja'
+        assert bct.get_answer_widget().question == 'Nein', 'Question should be Ja'
         widget_code = str(bct.get_widget())
-        assert 'Hai!' in widget_code, 'Question should be inside'
-        assert bct.get_answer_widget().labels == ['Yes', 'No'], "Labels should be set"
+        assert widgets.MultipleChoiceQuestion.DEFAULT_PREFIX not in widget_code, 'Default Question should not be inside'
+        assert 'iie!' in widget_code, 'Question should be inside'
+        assert bct.get_answer_widget().labels == ['Yes',
+                                                  'No'], "Labels should be set"
 
     # ensure timing works
     time.sleep(0.5)
