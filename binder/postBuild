@@ -9,4 +9,4 @@ jupyter nbextension enable --py --sys-prefix cornerstone_widget
 
 python setup.py develop
 
-cd sample_data; wget -O low_res.zip 'https://www.dropbox.com/s/ubg9fdknmjdgah0/high_res_pneu.zip?dl=1'; unzip -q low_res.zip; cd ..
+cd sample_data; wget -O low_res.zip 'https://www.dropbox.com/s/eld87p810mof6si/high_res_consistent.zip?dl=1'; unzip -q low_res.zip; cd ..
