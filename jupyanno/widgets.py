@@ -7,6 +7,7 @@ import warnings
 from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
+from typing import Union, Optional, Dict
 
 import ipywidgets as ipw
 import numpy as np
@@ -271,15 +272,20 @@ IMAGE_VIEWERS = {
 
 
 class MultipleChoiceQuestion(WidgetObject):
-    def __init__(self, question, labels, question_prefix='', width="150px",
+    def __init__(self,
+                 question,
+                 labels,
+                 question_template='',  # type: Union[str, Dict[str, str]]
+                 width="150px",
                  buttons_per_row=1):
+        # type: (...) -> None
         self.question_box = ipw.HTML(value='')
         self.labels = labels
         self.width = width
         self.buttons_per_row = buttons_per_row
         self._make_buttons(labels)
 
-        self.question_prefix = question_prefix
+        self.question_template = question_template
         self.set_question(question)
 
         self.submit_func = None
@@ -295,8 +301,13 @@ class MultipleChoiceQuestion(WidgetObject):
 
     def set_question(self, question):
         self.question = question
-        self.question_box.value = '<h2>{} <i>{}</i>?</h2>'.format(
-            self.question_prefix, self.question)
+        if isinstance(self.question_template, str):
+            q_html = '<h2>{} <i>{}</i>?</h2>'.format(
+                self.question_template, self.question)
+        elif isinstance(self.question_template, dict):
+            q_test = self.question_template.get(question, '')
+            q_html = '<h2>{}</h2>'.format(q_test)
+        self.question_box.value = q_html
         self.disable_buttons(False)
 
     def mk_btn(self, description):
@@ -337,9 +348,14 @@ class AbstractClassificationTask(WidgetObject):
     these cases and should not be instantiated alone
     """
 
-    def __init__(self, labels, task_data, seed=None, maximum_count=None,
+    def __init__(self,
+                 labels,
+                 task_data,
+                 seed=None,  # type: Optional[int]
+                 maximum_count=None,  # type: Optional[int]
                  image_panel_type='PlotlyImageViewer',
                  **image_panel_kwargs):
+        # type: (...) -> None
         self.labels = labels
         self._image_dict = {
             c_row[task_data.image_key_col]: (
@@ -357,7 +373,7 @@ class AbstractClassificationTask(WidgetObject):
             raise ValueError('Widget Type: {} not found'.format(
                 image_panel_type))
         self.task_widget = c_viewer(**image_panel_kwargs)
-        self.answer_widget.on_submit(lambda x: self._local_submit(x))
+        self.get_answer_widget().on_submit(lambda x: self._local_submit(x))
         self.current_image_id = None
         self.set_seed(seed)
         self.maximum_count = maximum_count
@@ -375,7 +391,7 @@ class AbstractClassificationTask(WidgetObject):
         self._local_submit(MultipleChoiceAnswer(question=None, answer=None))
 
         # we want to append to it later
-        self._answer_region = ipw.VBox([self.answer_widget.get_widget()])
+        self._answer_region = ipw.VBox([self.get_answer_widget().get_widget()])
 
         super().__init__(
             ipw.HBox([
@@ -386,6 +402,10 @@ class AbstractClassificationTask(WidgetObject):
                 self._answer_region
             ])
         )
+
+    def get_answer_widget(self):
+        # type: (...) -> MultipleChoiceQuestion
+        raise NotImplementedError('Answer widget should be implemented')
 
     def get_viewing_info(self):
         return self.task_widget.get_viewing_info()
@@ -446,10 +466,13 @@ class MultiClassTask(AbstractClassificationTask):
     def __init__(self, labels, task_data,
                  seed=None, max_count=None,
                  image_panel_type='PlotlyImageViewer', **panel_args):
-        self.answer_widget = MultipleChoiceQuestion(
+        self._answer_widget = MultipleChoiceQuestion(
             'Select the most appropriate label for the given image', labels)
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
+
+    def get_answer_widget(self):
+        return self._answer_widget
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='MultiClass',
@@ -467,26 +490,35 @@ class BinaryClassTask(AbstractClassificationTask):
     """
     A class for handling binary (or trinary) classification problems
     """
+    DEFAULT_QUESTION = 'Does the following text accurately describe the image:'
 
     def __init__(self, labels,
                  task_data,
-                 unknown_option,
+                 unknown_option,  # type: Optional[str]
                  image_panel_type='PlotlyImageViewer',
-                 seed=None,
-                 max_count=None,
-                 prefix='Does the following text accurately describe the image:',
+                 seed=None,  # type: Optional[int]
+                 max_count=None,  # type: Optional[int]
+                 question_dict=None,  # type: Optional[Dict[str, str]]
                  **panel_args
                  ):
+        # type: (...) -> None
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
+        if question_dict is None:
+            question_template = self.DEFAULT_QUESTION
+        else:
+            question_template = question_dict
 
-        self.answer_widget = MultipleChoiceQuestion('',
-                                                    answer_choices,
-                                                    question_prefix=prefix,
-                                                    buttons_per_row=1)
+        self._answer_widget = MultipleChoiceQuestion('',
+                                                     answer_choices,
+                                                     question_template=question_template,
+                                                     buttons_per_row=1)
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
+
+    def get_answer_widget(self):
+        return self._answer_widget
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='BinaryClass',
@@ -498,5 +530,5 @@ class BinaryClassTask(AbstractClassificationTask):
         question = np.random.choice(self.labels)
         # update image
         self._update_image(image_key)
-        self.answer_widget.set_question(question)
+        self._answer_widget.set_question(question)
         return c_task_dict
