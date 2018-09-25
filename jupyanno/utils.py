@@ -70,6 +70,21 @@ def get_app_user_id():
     return qs_info.get('user', ['nobody'])[0]
 
 
+def majority_vote(votes, minimum_count=3):
+    """Determine the label voted for by the majority
+
+    Given a list of binary votes we compute the preferred label
+    based on a simple majority vote if there are atleast `minimum_count`
+    votes.
+
+    Returns the binary label or `None` if there are not enough votes
+    """
+    if len(votes) <= minimum_count:
+        return None
+    else:
+        return sum(votes) / len(votes) > 0.5
+
+
 def safe_json_load(in_str):
     """
     safely load json strings as dictionaries
