@@ -26,12 +26,7 @@ TaskResult = namedtuple(
 
 VIEWER_WIDTH = '600px'
 
-# TODO: this needs to be moved to package resources
-if os.path.exists('load.gif'):
-    with open('load.gif', 'rb') as f:
-        LOAD_ANIMATION = f.read()
-else:
-    LOAD_ANIMATION = b''
+LOAD_ANIMATION = b''  # none for now
 
 
 class WidgetObject:
