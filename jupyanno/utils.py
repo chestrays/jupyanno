@@ -94,6 +94,26 @@ def _wrap_uri(data_uri):
     return "data:image/png;base64,{0}".format(data_uri)
 
 
+def image_to_png_uri(in_img):
+    """
+    Create a URI from a PIL Image
+    :param in_img: in PIL Image
+    :return: string with image URI
+    >>> f = Image.fromarray(np.eye(3), 'L')
+    >>> image_to_png_uri(f)[:60]
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAAAAA'
+    >>> f = Image.fromarray(1-np.eye(256), 'L')
+    >>> image_to_png_uri(f)[:60]
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAAAAA'
+    """
+    bio_obj = BytesIO()
+    in_img.save(bio_obj, format='png')
+    bio_obj.seek(0)
+    b64_str = base64.b64encode(bio_obj.read()).decode(
+        "ascii").replace("\n", "")
+    return _wrap_uri(b64_str)
+
+
 def raw_html_render(temp_df):
     """
     For rendering html tables which contain HTML information and

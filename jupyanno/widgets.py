@@ -1,13 +1,13 @@
 """The widgets are the heart of jupyanno package and bring together
 tasks as task panels (with images) and answer panels (with buttons
 and multiple choice options)"""
-import base64
 import json
 import os
 import warnings
 from collections import namedtuple, defaultdict
 from io import BytesIO
 from time import time
+from typing import Optional, Dict
 
 import ipywidgets as ipw
 import numpy as np
@@ -16,7 +16,7 @@ from IPython.display import display
 from PIL import ImageEnhance as ie
 from cornerstone_widget import CornerstoneToolbarWidget
 
-from .utils import load_image_multiformat
+from .utils import load_image_multiformat, image_to_png_uri
 
 MultipleChoiceAnswer = namedtuple(
     'MultipleChoiceAnswer', ['answer', 'question'])
@@ -26,12 +26,7 @@ TaskResult = namedtuple(
 
 VIEWER_WIDTH = '600px'
 
-# TODO: this needs to be moved to package resources
-if os.path.exists('load.gif'):
-    with open('load.gif', 'rb') as f:
-        LOAD_ANIMATION = f.read()
-else:
-    LOAD_ANIMATION = b''
+LOAD_ANIMATION = b''  # none for now
 
 
 class WidgetObject:
@@ -78,13 +73,15 @@ class SimpleImageViewer(WidgetObject):
 class CornerstoneViewer(WidgetObject):
     """
     A cornerstone-based image viewer
+    :param tools: list of names of tools (from TOOLS dict)
     >>> h = CornerstoneViewer()
     >>> h.get_viewing_info()
     '{}'
     """
 
-    def __init__(self, **kwargs):
-        self.cur_image_view = CornerstoneToolbarWidget()
+    def __init__(self, tools=None, **kwargs):
+
+        self.cur_image_view = CornerstoneToolbarWidget(tools=tools)
         self.loaded_time = None
         self._image_data = np.zeros((3, 3))
 
@@ -114,17 +111,8 @@ class CornerstoneViewer(WidgetObject):
         return json.dumps(out_info)
 
 
-def wrap_bytes_as_uri(in_byte_obj):
-    b64_str = base64.b64encode(in_byte_obj.read()).decode(
-        "ascii").replace("\n", "")
-    return "data:image/png;base64,{0}".format(b64_str)
-
-
-def image_dict(c_img):
-    bio_obj = BytesIO()
-    c_img.save(bio_obj, format='png')
-    bio_obj.seek(0)
-    nice_uri = wrap_bytes_as_uri(bio_obj)
+def _wrap_image_dict(c_img):
+    nice_uri = image_to_png_uri(c_img)
     return dict(source=nice_uri,
                 x=0,
                 sizex=c_img.width,
@@ -141,33 +129,13 @@ def image_dict(c_img):
 class PlotlyImageViewer(WidgetObject):
     """
     A plotly-based image viewer allowing zoom, pan and overlays
-    >>> h = PlotlyImageViewer(with_bc=True).get_widget()
-    >>> h.children[-1].data[0]['uid']=0
-    >>> print(h)
-    VBox(children=(HBox(children=(FloatSlider(value=1.0, continuous_update=False, description='Brightness:', max=3.5), FloatSlider(value=1.0, continuous_update=False, description='Contrast:', max=3.5))), Label(value='Loading...'), FigureWidget({
-        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
-        'layout': {'dragmode': 'zoom',
-                   'hovermode': False,
-                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
-                   'title': 'Loading...',
-                   'xaxis': {'visible': False},
-                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
-    })), layout=Layout(height='768px', width='600px'))
-    >>> h = PlotlyImageViewer(with_bc=False).get_widget()
-    >>> h.children[-1].data[0]['uid']=0
-    >>> print(h)
-    VBox(children=(Label(value='Loading...'), FigureWidget({
-        'data': [{'marker': {'opacity': 0}, 'mode': 'markers', 'type': 'scatter', 'uid': '0', 'x': [0, 1], 'y': [0, 1]}],
-        'layout': {'dragmode': 'zoom',
-                   'hovermode': False,
-                   'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
-                   'title': 'Loading...',
-                   'xaxis': {'visible': False},
-                   'yaxis': {'scaleanchor': 'x', 'visible': False}}
-    })), layout=Layout(height='768px', width='600px'))
+    :param width: the width of the widget
+    :param with_bc: show brightness and contrast sliders
+    :param kwargs: additional arguments to ignore
     """
 
     def __init__(self, width=VIEWER_WIDTH, with_bc=True, **kwargs):
+
         self._g = go.FigureWidget(data=[{
             'x': [0, 1],
             'y': [0, 1],
@@ -260,7 +228,7 @@ class PlotlyImageViewer(WidgetObject):
         if self._raw_img is not None:
             cont_img = ie.Contrast(self._raw_img).enhance(self._contrast.value)
             proc_img = ie.Brightness(cont_img).enhance(self._brightness.value)
-            img_dict = image_dict(proc_img)
+            img_dict = _wrap_image_dict(proc_img)
             if refresh_view:
                 with self._g.batch_update():
                     self._g.data[0].x = [0,
@@ -293,15 +261,25 @@ IMAGE_VIEWERS = {
 
 
 class MultipleChoiceQuestion(WidgetObject):
-    def __init__(self, question, labels, question_prefix='', width="150px",
+    DEFAULT_PREFIX = 'Does the following text accurately describe the image:'
+    DEFAULT_QUESTION = '%s: {}?' % (DEFAULT_PREFIX)
+
+    def __init__(self,
+                 question,
+                 labels,
+                 question_template=None,  # type: Optional[Dict[str, str]]
+                 width="150px",
                  buttons_per_row=1):
+        # type: (...) -> None
         self.question_box = ipw.HTML(value='')
         self.labels = labels
         self.width = width
         self.buttons_per_row = buttons_per_row
         self._make_buttons(labels)
-
-        self.question_prefix = question_prefix
+        if question_template is not None:
+            self.question_template = question_template
+        else:
+            self.question_template = {}
         self.set_question(question)
 
         self.submit_func = None
@@ -317,8 +295,11 @@ class MultipleChoiceQuestion(WidgetObject):
 
     def set_question(self, question):
         self.question = question
-        self.question_box.value = '<h2>{} <i>{}</i>?</h2>'.format(
-            self.question_prefix, self.question)
+        q_test = self.question_template.get(question)
+        if q_test is None:
+            q_test = self.DEFAULT_QUESTION.format(question)
+        q_html = '<h2>{}</h2>'.format(q_test)
+        self.question_box.value = q_html
         self.disable_buttons(False)
 
     def mk_btn(self, description):
@@ -359,9 +340,14 @@ class AbstractClassificationTask(WidgetObject):
     these cases and should not be instantiated alone
     """
 
-    def __init__(self, labels, task_data, seed=None, maximum_count=None,
+    def __init__(self,
+                 labels,
+                 task_data,
+                 seed=None,  # type: Optional[int]
+                 maximum_count=None,  # type: Optional[int]
                  image_panel_type='PlotlyImageViewer',
                  **image_panel_kwargs):
+        # type: (...) -> None
         self.labels = labels
         self._image_dict = {
             c_row[task_data.image_key_col]: (
@@ -408,6 +394,11 @@ class AbstractClassificationTask(WidgetObject):
                 self._answer_region
             ])
         )
+
+    @property
+    def answer_widget(self):
+        # type: (...) -> MultipleChoiceQuestion
+        raise NotImplementedError('Answer widget should be implemented')
 
     def get_viewing_info(self):
         return self.task_widget.get_viewing_info()
@@ -468,10 +459,14 @@ class MultiClassTask(AbstractClassificationTask):
     def __init__(self, labels, task_data,
                  seed=None, max_count=None,
                  image_panel_type='PlotlyImageViewer', **panel_args):
-        self.answer_widget = MultipleChoiceQuestion(
+        self._answer_widget = MultipleChoiceQuestion(
             'Select the most appropriate label for the given image', labels)
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
+
+    @property
+    def answer_widget(self):
+        return self._answer_widget
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='MultiClass',
@@ -492,23 +487,28 @@ class BinaryClassTask(AbstractClassificationTask):
 
     def __init__(self, labels,
                  task_data,
-                 unknown_option,
+                 unknown_option,  # type: Optional[str]
                  image_panel_type='PlotlyImageViewer',
-                 seed=None,
-                 max_count=None,
-                 prefix='Does the following text accurately describe the image:',
+                 seed=None,  # type: Optional[int]
+                 max_count=None,  # type: Optional[int]
+                 question_dict=None,  # type: Optional[Dict[str, str]]
                  **panel_args
                  ):
+        # type: (...) -> None
         answer_choices = ['Yes', 'No']
         if unknown_option is not None:
             answer_choices.append(unknown_option)
 
-        self.answer_widget = MultipleChoiceQuestion('',
-                                                    answer_choices,
-                                                    question_prefix=prefix,
-                                                    buttons_per_row=1)
+        self._answer_widget = MultipleChoiceQuestion('',
+                                                     answer_choices,
+                                                     question_template=question_dict,
+                                                     buttons_per_row=1)
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
+
+    @property
+    def answer_widget(self):
+        return self._answer_widget
 
     def _submit(self, mc_answer):
         c_task_dict = dict(annotation_mode='BinaryClass',
@@ -520,5 +520,5 @@ class BinaryClassTask(AbstractClassificationTask):
         question = np.random.choice(self.labels)
         # update image
         self._update_image(image_key)
-        self.answer_widget.set_question(question)
+        self._answer_widget.set_question(question)
         return c_task_dict
