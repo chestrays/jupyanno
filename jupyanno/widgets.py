@@ -79,20 +79,14 @@ class CornerstoneViewer(WidgetObject):
     """
     A cornerstone-based image viewer
     :param tools: list of names of tools (from TOOLS dict)
-    :param show_reset: show the reset button
     >>> h = CornerstoneViewer()
     >>> h.get_viewing_info()
     '{}'
     """
 
-    def __init__(self, tools=None, show_reset=False, **kwargs):
-        ct_kwargs = {}
+    def __init__(self, tools=None, **kwargs):
 
-        if tools is not None:
-            ct_kwargs = {'tools': tools}
-
-        self.cur_image_view = CornerstoneToolbarWidget(show_reset=show_reset,
-                                                       **ct_kwargs)
+        self.cur_image_view = CornerstoneToolbarWidget(tools=tools)
         self.loaded_time = None
         self._image_data = np.zeros((3, 3))
 
