@@ -370,7 +370,7 @@ class AbstractClassificationTask(WidgetObject):
             raise ValueError('Widget Type: {} not found'.format(
                 image_panel_type))
         self.task_widget = c_viewer(**image_panel_kwargs)
-        self.get_answer_widget().on_submit(lambda x: self._local_submit(x))
+        self.answer_widget.on_submit(lambda x: self._local_submit(x))
         self.current_image_id = None
         self.set_seed(seed)
         self.maximum_count = maximum_count
@@ -388,7 +388,7 @@ class AbstractClassificationTask(WidgetObject):
         self._local_submit(MultipleChoiceAnswer(question=None, answer=None))
 
         # we want to append to it later
-        self._answer_region = ipw.VBox([self.get_answer_widget().get_widget()])
+        self._answer_region = ipw.VBox([self.answer_widget.get_widget()])
 
         super().__init__(
             ipw.HBox([
@@ -400,7 +400,8 @@ class AbstractClassificationTask(WidgetObject):
             ])
         )
 
-    def get_answer_widget(self):
+    @property
+    def answer_widget(self):
         # type: (...) -> MultipleChoiceQuestion
         raise NotImplementedError('Answer widget should be implemented')
 
@@ -468,7 +469,8 @@ class MultiClassTask(AbstractClassificationTask):
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
 
-    def get_answer_widget(self):
+    @property
+    def answer_widget(self):
         return self._answer_widget
 
     def _submit(self, mc_answer):
@@ -509,7 +511,8 @@ class BinaryClassTask(AbstractClassificationTask):
         super().__init__(labels, task_data, seed, max_count,
                          image_panel_type=image_panel_type, **panel_args)
 
-    def get_answer_widget(self):
+    @property
+    def answer_widget(self):
         return self._answer_widget
 
     def _submit(self, mc_answer):

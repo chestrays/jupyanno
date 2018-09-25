@@ -92,12 +92,12 @@ def test_binaryclasstask(image_panel_type):
 
         view_info = json.loads(bct.get_viewing_info())
         assert view_info['viewing_time'] < 0.5, 'Viewing time should be short'
-        assert bct.get_answer_widget().question == 'Nein', 'Question should be Ja'
+        assert bct.answer_widget.question == 'Nein', 'Question should be Ja'
         widget_code = str(bct.get_widget())
         assert widgets.MultipleChoiceQuestion.DEFAULT_PREFIX not in widget_code, 'Default Question should not be inside'
         assert 'iie!' in widget_code, 'Question should be inside'
-        assert bct.get_answer_widget().labels == ['Yes',
-                                                  'No'], "Labels should be set"
+        assert bct.answer_widget.labels == ['Yes',
+                                            'No'], "Labels should be set"
 
     # ensure timing works
     time.sleep(0.5)
