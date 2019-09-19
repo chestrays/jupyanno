@@ -28,3 +28,5 @@ dependencies:
     - cloudpickle
     - fileupload
     - git+https://github.com/chestrays/cornerstone_widget
+    - voila
+    - voila-material
