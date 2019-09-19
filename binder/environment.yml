@@ -17,8 +17,6 @@ dependencies:
   - SimpleITK
   - scikit-image<=0.20
   - scikit-learn<=0.20
-  - nbserverproxy
-  - appmode
   - jupyter_dashboards
   - pip:
     - plotly
@@ -30,3 +28,4 @@ dependencies:
     - git+https://github.com/chestrays/cornerstone_widget
     - voila
     - voila-material
+    - requests
